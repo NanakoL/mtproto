@@ -33,6 +33,7 @@ type AppConfig struct {
 }
 
 type MTProto struct {
+	useIPv6    bool
 	session    *Session
 	appCfg     *AppConfig
 	connDialer proxy.Dialer
@@ -77,12 +78,6 @@ func newPacket(msg TL, resp chan TL) *packetToSend {
 	return &packetToSend{msg: msg, resp: resp}
 }
 
-type MTParams struct {
-	AppConfig  *AppConfig
-	ConnDialer proxy.Dialer
-	Session    *Session
-}
-
 func NewAppConfig(appID int32, appHash string) *AppConfig {
 	if appID == 0 {
 		appID = int32(48841)
@@ -103,19 +98,16 @@ func NewAppConfig(appID int32, appHash string) *AppConfig {
 	return config
 }
 
-func NewMTProto(params MTParams) *MTProto {
-	if params.AppConfig == nil {
-		params.AppConfig = NewAppConfig(0, "")
-	}
-
-	if params.ConnDialer == nil {
-		params.ConnDialer = &net.Dialer{}
+func NewMTProto(cfg  *AppConfig) *MTProto {
+	if cfg == nil {
+		cfg = NewAppConfig(0, "")
 	}
 
 	m := &MTProto{
-		session:    params.Session,
-		connDialer: params.ConnDialer,
-		appCfg:     params.AppConfig,
+			useIPv6: false,
+		session:    nil,
+		connDialer: &net.Dialer{},
+		appCfg:     cfg,
 
 		extSendQueue: make(chan *packetToSend, 64),
 		sendQueue:    make(chan *packetToSend, 1024),
@@ -127,8 +119,22 @@ func NewMTProto(params MTParams) *MTProto {
 		connectSemaphore: semaphore.NewWeighted(1),
 		reconnSemaphore:  semaphore.NewWeighted(1),
 	}
+
+
 	go m.debugRoutine()
 	return m
+}
+
+func (m *MTProto) SetSession(s *Session) {
+	m.session = s
+}
+
+func (m *MTProto) UseIPv6(b bool) {
+	m.useIPv6 = b
+}
+
+func (m *MTProto) SetDialer(d proxy.Dialer) {
+	m.connDialer = d
 }
 
 func (m *MTProto) InitSessAndConnect() error {
@@ -141,13 +147,17 @@ func (m *MTProto) InitSessAndConnect() error {
 	return nil
 }
 
-func (m *MTProto) InitSession(sessEncrIsReady bool) error {
+func (m *MTProto) InitSession(isReady bool) error {
 	if m.session != nil {
-		m.encryptionReady = sessEncrIsReady
+		m.encryptionReady = isReady
 	} else {
 		m.encryptionReady = false
 		// Create New Session
-		m.session = &Session{Addr: "149.154.167.50:443"}
+		if !m.useIPv6 {
+			m.session = &Session{Addr: "149.154.167.50:443"}
+		} else {
+			m.session = &Session{Addr: "[2001:67c:4e8:f002::a]:443"}
+		}
 	}
 
 	rand.Seed(time.Now().UnixNano())
@@ -160,9 +170,12 @@ func (m *MTProto) CopySession() *Session {
 	return &sess
 }
 
-func (m *MTProto) DCAddr(dcID int32, ipv6 bool) (string, bool) {
+func (m *MTProto) DCAddr(dcID int32) (string, bool) {
 	for _, o := range m.dcOptions {
-		if o.ID == dcID && o.Ipv6 == ipv6 && !o.Cdn {
+		if o.ID == dcID && o.Ipv6 == m.useIPv6 && !o.Cdn {
+			if o.Ipv6 {
+				return fmt.Sprintf("[%s]:%d", o.IpAddress, o.Port), true
+			}
 			return fmt.Sprintf("%s:%d", o.IpAddress, o.Port), true
 		}
 	}
@@ -244,9 +257,10 @@ func (m *MTProto) Connect() error {
 		log.Warn("failed to connect, Retrying (%d)", retry)
 		if retry > 10 {
 			log.Error(err, "failed to connect, Abort.")
+			break
 		}
 		retry += 1
-		time.Sleep(1)
+		time.Sleep(time.Second)
 	}
 
 	// starting goroutines
@@ -336,7 +350,7 @@ func (m *MTProto) reconnect(newDcID int32) error {
 
 			//https://github.com/sochix/TLSharp/blob/0940d3d982e9c22adac96b6c81a435403802899a/TLSharp.Core/TelegramClient.cs#L84
 		}
-		newDcAddr, ok := m.DCAddr(newDcID, false)
+		newDcAddr, ok := m.DCAddr(newDcID)
 		if !ok {
 			return merry.Errorf("wrong DC number: %d", newDcID)
 		}
@@ -378,16 +392,14 @@ func (m *MTProto) NewConnection(dcID int32) (*MTProto, error) {
 	encrIsReady := isOnSameDC
 	session.DcID = dcID
 	var ok bool
-	session.Addr, ok = m.DCAddr(dcID, false)
-	if !ok {
+	if session.Addr, ok = m.DCAddr(dcID); !ok {
 		return nil, merry.Errorf("unable find address for DC #%d", dcID)
 	}
 
-	newMT := NewMTProto(MTParams{
-		AppConfig:  m.appCfg,
-		Session:    session,
-		ConnDialer: m.connDialer,
-	})
+	newMT := NewMTProto(m.appCfg)
+	newMT.SetDialer(m.connDialer)
+	newMT.SetSession(session)
+
 	if err := newMT.InitSession(encrIsReady); err != nil {
 		return nil, merry.Wrap(err)
 	}

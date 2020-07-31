@@ -82,9 +82,11 @@ func (m *MTProto) send(packet *packetToSend) error {
 	} else {
 		binary.LittleEndian.PutUint32(x.buf, uint32(size<<8|127))
 	}
+	_ = m.conn.SetWriteDeadline(time.Now().Add(60 * time.Second))
 	if _, err := m.conn.Write(x.buf); err != nil {
 		return merry.Wrap(err)
 	}
+
 	return nil
 }
 

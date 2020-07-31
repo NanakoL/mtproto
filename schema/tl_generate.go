@@ -100,6 +100,14 @@ func maybeFlagged(_type string, isFlag bool, flagBit int, args ...string) string
 	}
 }
 
+func maybeFlaggedExt(_type string, isFlag bool, flagBit int) string {
+	if isFlag {
+		return fmt.Sprintf("m.Flagged%s(flags, %d)", _type, flagBit)
+	} else {
+		return fmt.Sprintf("m.%s()", _type)
+	}
+}
+
 func makeField(name, typeName string) Field {
 	flagBit := -1
 	if strings.HasPrefix(typeName, "flags.") { //flags.2?string
@@ -214,7 +222,7 @@ func parseTLSchema(data []byte) []*Combinator {
 			fields = append(fields, makeField(name, typeName))
 		}
 
-		combinators = append(combinators, &Combinator{id, name, fields, typeName, isFunction})
+		combinators = append(combinators, &Combinator{ normalizeAttr(id), name, fields, typeName, isFunction})
 	}
 	print("Parsed: ", total)
 	return combinators
@@ -245,107 +253,114 @@ func main() {
 import (
 	"github.com/ansel1/merry"
 )
+
 `)
 	fmt.Printf("const (\n")
-	fmt.Printf("TL_Layer = %d\n", layer)
+	fmt.Printf("Layer = %d\n", layer)
 	for _, c := range combinators {
-		fmt.Printf("CRC_%s = 0x%08x\n", c.id, c.name)
+		fmt.Printf("crc%s = 0x%08x\n", c.id, c.name)
 	}
 	fmt.Printf(")\n\n")
 
 	// type structs
 	for _, c := range combinators {
-		fmt.Printf("type TL_%s struct {\n", c.id)
+		//print(fmt.Sprintf("%+v", c), "\n\n\n")
+		fmt.Printf("type %s struct {\n", c.id)
 		for _, t := range c.fields {
-			fmt.Printf("%s\t", normalizeAttr(t.name))
+			line := fmt.Sprintf("%s\t", normalizeAttr(t.name))
 			switch t.typeName {
 			case "true": //flags only
-				fmt.Printf("bool")
+				line += fmt.Sprintf("bool")
 			case "int", "#":
-				fmt.Printf("int32")
+				line += fmt.Sprintf("int32")
 			case "long":
-				fmt.Printf("int64")
+				line += fmt.Sprintf("int64")
 			case "int128":
-				fmt.Printf("[]byte")
+				line += fmt.Sprintf("[]byte")
 			case "int256":
-				fmt.Printf("[]byte")
+				line += fmt.Sprintf("[]byte")
 			case "string":
-				fmt.Printf("string")
+				line += fmt.Sprintf("string")
 			case "double":
-				fmt.Printf("float64")
+				line += fmt.Sprintf("float64")
 			case "bytes":
-				fmt.Printf("[]byte")
+				line += fmt.Sprintf("[]byte")
 			case "Vector<int>":
-				fmt.Printf("[]int32")
+				line += fmt.Sprintf("[]int32")
 			case "Vector<long>":
-				fmt.Printf("[]int64")
+				line += fmt.Sprintf("[]int64")
 			case "Vector<string>":
-				fmt.Printf("[]string")
+				line += fmt.Sprintf("[]string")
 			case "Vector<double>":
-				fmt.Printf("[]float64")
+				line += fmt.Sprintf("[]float64")
 			case "!X":
-				fmt.Printf("TL")
+				line = fmt.Sprintf("%s TL",  normalizeAttr(t.name))
 			default:
 				var inner string
-				n, _ := fmt.Sscanf(t.typeName, "Vector<%s", &inner)
+				n, _ := fmt.Sscanf(strings.Title(t.typeName), "Vector<%s", &inner)
 				if n == 1 {
-					fmt.Printf("[]TL // %s", inner[:len(inner)-1])
+					line = fmt.Sprintf("%s []TL // %s",  normalizeAttr(t.name), inner[:len(inner)-1])
 				} else {
-					fmt.Printf("TL // %s", t.typeName)
+					line = fmt.Sprintf("%s TL // %s",  normalizeAttr(t.name), t.typeName)
 				}
 			}
 			if t.isFlag() {
-				fmt.Printf(" //flag")
+				line += fmt.Sprintf(" // flag")
 			}
-			fmt.Printf("\n")
+			fmt.Printf("%s\n", line)
 		}
 		fmt.Printf("}\n\n")
 	}
 
 	// encode funcs
 	for _, c := range combinators {
-		fmt.Printf("func (e TL_%s) encode() []byte {\n", c.id)
+		fmt.Printf("func (e %s) encode() []byte {\n",  c.id)
 		fmt.Printf("x := NewEncodeBuf(512)\n")
-		fmt.Printf("x.UInt(CRC_%s)\n", c.id)
+		fmt.Printf("x.UInt(crc%s)\n", c.id)
 		for _, t := range c.fields {
-			attrName := normalizeAttr(t.name)
+			attrName := "e." + normalizeAttr(t.name)
 			if t.isFlag() && t.typeName != "true" {
 				fmt.Printf("if e.Flags & %d != 0 {\n", 1<<uint(t.flagBit))
+				//attrName = "*" + attrName
 			}
 			switch t.typeName {
 			case "true": //flags only
 				fmt.Printf("//flag %s\n", attrName)
 			case "int", "#":
-				fmt.Printf("x.Int(e.%s)\n", attrName)
+				fmt.Printf("x.Int(%s)\n", attrName)
 			case "long":
-				fmt.Printf("x.Long(e.%s)\n", attrName)
+				fmt.Printf("x.Long(%s)\n", attrName)
 			case "int128":
-				fmt.Printf("x.Bytes(e.%s)\n", attrName)
+				fmt.Printf("x.Bytes(%s)\n", attrName)
 			case "int256":
-				fmt.Printf("x.Bytes(e.%s)\n", attrName)
+				fmt.Printf("x.Bytes(%s)\n", attrName)
 			case "string":
-				fmt.Printf("x.String(e.%s)\n", attrName)
+				fmt.Printf("x.String(%s)\n", attrName)
 			case "double":
-				fmt.Printf("x.Double(e.%s)\n", attrName)
+				fmt.Printf("x.Double(%s)\n", attrName)
 			case "bytes":
-				fmt.Printf("x.StringBytes(e.%s)\n", attrName)
+				fmt.Printf("x.StringBytes(%s)\n", attrName)
 			case "Vector<int>":
-				fmt.Printf("x.VectorInt(e.%s)\n", attrName)
+				fmt.Printf("x.VectorInt(%s)\n", attrName)
 			case "Vector<long>":
-				fmt.Printf("x.VectorLong(e.%s)\n", attrName)
+				fmt.Printf("x.VectorLong(%s)\n", attrName)
 			case "Vector<string>":
-				fmt.Printf("x.VectorString(e.%s)\n", attrName)
+				fmt.Printf("x.VectorString(%s)\n", attrName)
 			case "Vector<double>":
-				fmt.Printf("x.VectorDouble(e.%s)\n", attrName)
+				fmt.Printf("x.VectorDouble(%s)\n", attrName)
 			case "!X":
-				fmt.Printf("x.Bytes(e.%s.encode())\n", attrName)
+				if t.isFlag() {
+					fmt.Printf("x.Bytes(%s.encode())\n", attrName[1:])
+				} else {
+					fmt.Printf("x.Bytes(%s.encode())\n", attrName)
+				}
 			default:
 				var inner string
-				n, _ := fmt.Sscanf(t.typeName, "Vector<%s", &inner)
+				n, _ := fmt.Sscanf(strings.Title(t.typeName), "Vector<%s", &inner)
 				if n == 1 {
-					fmt.Printf("x.Vector(e.%s)\n", attrName)
+					fmt.Printf("x.Vector(%s) \n", attrName)
 				} else {
-					fmt.Printf("x.Bytes(e.%s.encode())\n", attrName)
+					fmt.Printf("x.Bytes(%s.encode())\n", attrName)
 				}
 			}
 			if t.isFlag() && t.typeName != "true" {
@@ -359,7 +374,7 @@ import (
 	// request decode funcs (for funtions)
 	for _, c := range combinators {
 		if c.isFunction {
-			fmt.Printf("func (e TL_%s) decodeResponse(dbuf *DecodeBuf) TL {\n", c.id)
+			fmt.Printf("func (e %s) decodeResponse(dbuf *DecodeBuf) TL {\n", c.id)
 			if c.typeName == "Vector<int>" {
 				fmt.Printf("return VectorInt(dbuf.VectorInt())\n")
 			} else if c.typeName == "Vector<long>" {
@@ -385,11 +400,11 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 	switch constructor {`)
 
 	for _, c := range combinators {
-		fmt.Printf("case CRC_%s:\n", c.id)
+		fmt.Printf("case crc%s:\n", c.id)
 		if c.hasFlags() {
 			fmt.Printf("var flags int32\n")
 		}
-		fmt.Printf("r = TL_%s{\n", c.id)
+		fmt.Printf("r = %s{\n", c.id)
 		for _, t := range c.fields {
 			isFlag := t.isFlag()
 			switch t.typeName {
@@ -423,11 +438,11 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 				fmt.Printf(maybeFlagged("Object", isFlag, t.flagBit))
 			default:
 				var inner string
-				n, _ := fmt.Sscanf(t.typeName, "Vector<%s", &inner)
+				n, _ := fmt.Sscanf(strings.Title(t.typeName), "Vector<%s>", &inner)
 				if n == 1 {
-					fmt.Printf(maybeFlagged("Vector", isFlag, t.flagBit))
+					fmt.Printf(maybeFlaggedExt("Vector", isFlag, t.flagBit) + ",\n")
 				} else {
-					fmt.Printf(maybeFlagged("Object", isFlag, t.flagBit))
+					fmt.Printf(maybeFlaggedExt("Object", isFlag, t.flagBit) + ",\n")
 				}
 			}
 		}

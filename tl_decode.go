@@ -225,7 +225,7 @@ func (m *DecodeBuf) VectorInt() []int32 {
 	if m.err != nil {
 		return nil
 	}
-	if constructor != CRC_vector {
+	if constructor != crcVector {
 		m.err = merry.Errorf("DecodeVectorInt: wrong constructor (0x%08x)", constructor)
 		return nil
 	}
@@ -263,7 +263,7 @@ func (m *DecodeBuf) VectorLong() []int64 {
 	if m.err != nil {
 		return nil
 	}
-	if constructor != CRC_vector {
+	if constructor != crcVector {
 		m.err = merry.Errorf("DecodeVectorLong: wrong constructor (0x%08x)", constructor)
 		return nil
 	}
@@ -301,7 +301,7 @@ func (m *DecodeBuf) VectorString() []string {
 	if m.err != nil {
 		return nil
 	}
-	if constructor != CRC_vector {
+	if constructor != crcVector {
 		m.err = merry.Errorf("DecodeVectorString: wrong constructor (0x%08x)", constructor)
 		return nil
 	}
@@ -340,9 +340,9 @@ func (m *DecodeBuf) Bool() bool {
 		return false
 	}
 	switch constructor {
-	case CRC_boolFalse:
+	case crcBoolFalse:
 		return false
-	case CRC_boolTrue:
+	case crcBoolTrue:
 		return true
 	}
 	return false
@@ -353,7 +353,7 @@ func (m *DecodeBuf) Vector() []TL {
 	if m.err != nil {
 		return nil
 	}
-	if constructor != CRC_vector {
+	if constructor != crcVector {
 		m.err = merry.Errorf("DecodeVector: wrong constructor (0x%08x)", constructor)
 		return nil
 	}
@@ -402,12 +402,12 @@ func (m *DecodeBuf) FlaggedObject(flags, num int32) TL {
 	return m.Object()
 }
 
-func (d *DecodeBuf) dump() {
-	fmt.Println(hex.Dump(d.buf[d.off:d.size]))
+func (m *DecodeBuf) dump() {
+	fmt.Println(hex.Dump(m.buf[m.off:m.size]))
 }
 
 func toBool(x TL) bool {
-	_, ok := x.(TL_boolTrue)
+	_, ok := x.(BoolTrue)
 	return ok
 }
 
@@ -437,18 +437,18 @@ func (m *MTProto) decodeMessage(dbuf *DecodeBuf, reqMsg TLReq) (r TL) {
 	}
 
 	switch constructor {
-	case CRC_msg_container:
+	case crcMsgContainer:
 		size := dbuf.Int()
-		arr := make([]TL_MT_message, size)
+		arr := make([]MTMessage, size)
 		for i := int32(0); i < size; i++ {
-			arr[i] = TL_MT_message{dbuf.Long(), dbuf.Int(), dbuf.Int(), m.decodeMessage(dbuf, reqMsg)}
+			arr[i] = MTMessage{dbuf.Long(), dbuf.Int(), dbuf.Int(), m.decodeMessage(dbuf, reqMsg)}
 			if dbuf.err != nil {
 				return nil
 			}
 		}
-		r = TL_msg_container{arr}
+		r = MsgContainer{arr}
 
-	case CRC_rpc_result:
+	case crcRpcResult:
 		requestID := dbuf.Long()
 		m.mutex.Lock()
 		packet, ok := m.msgsByID[requestID]
@@ -465,9 +465,9 @@ func (m *MTProto) decodeMessage(dbuf *DecodeBuf, reqMsg TLReq) (r TL) {
 			r = m.decodeMessage(dbuf, nil)
 			log.Warn("got RPC result (%T) for unknown message #%d", r, requestID)
 		}
-		r = TL_rpc_result{requestID, r}
+		r = RpcResult{requestID, r}
 
-	case CRC_gzip_packed:
+	case crcGzipPacked:
 		obj := make([]byte, 0, 4096)
 
 		var buf bytes.Buffer
@@ -488,7 +488,7 @@ func (m *MTProto) decodeMessage(dbuf *DecodeBuf, reqMsg TLReq) (r TL) {
 
 	default:
 		dbuf.SeekBack(4) //returning constructor ID
-		if reqMsg == nil || constructor == CRC_rpc_error {
+		if reqMsg == nil || constructor == crcRpcError {
 			r = dbuf.Object()
 		} else {
 			r = reqMsg.decodeResponse(dbuf)

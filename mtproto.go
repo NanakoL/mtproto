@@ -63,7 +63,7 @@ type MTProto struct {
 	msgId           int64
 	handleEvent     func(TL)
 
-	dcOptions []*TL_dcOption
+	dcOptions []*DcOption
 }
 
 type packetToSend struct {
@@ -98,13 +98,13 @@ func NewAppConfig(appID int32, appHash string) *AppConfig {
 	return config
 }
 
-func NewMTProto(cfg  *AppConfig) *MTProto {
+func NewMTProto(cfg *AppConfig) *MTProto {
 	if cfg == nil {
 		cfg = NewAppConfig(0, "")
 	}
 
 	m := &MTProto{
-			useIPv6: false,
+		useIPv6:    false,
 		session:    nil,
 		connDialer: &net.Dialer{},
 		appCfg:     cfg,
@@ -119,7 +119,6 @@ func NewMTProto(cfg  *AppConfig) *MTProto {
 		connectSemaphore: semaphore.NewWeighted(1),
 		reconnSemaphore:  semaphore.NewWeighted(1),
 	}
-
 
 	go m.debugRoutine()
 	return m
@@ -190,9 +189,9 @@ func (m *MTProto) initConfig() error {
 
 	// getting connection configs
 	log.Debug("connecting: getting config...")
-	x := m.SendSyncRetry(TL_invokeWithLayer{
-		TL_Layer,
-		TL_initConnection{
+	x := m.SendSyncRetry(InvokeWithLayer{
+		Layer,
+		InitConnection{
 			Flags:          0,
 			ApiID:          m.appCfg.AppID,
 			DeviceModel:    m.appCfg.DeviceModel,
@@ -202,13 +201,13 @@ func (m *MTProto) initConfig() error {
 			LangPack:       m.appCfg.LangPack,
 			LangCode:       m.appCfg.LangCode,
 			Proxy:          nil, //flagged
-			Query:          TL_help_getConfig{},
+			Query:          HelpGetConfig{},
 		},
 	}, 5, 10, 10)
-	if cfg, ok := x.(TL_config); ok {
+	if cfg, ok := x.(Config); ok {
 		m.session.DcID = cfg.ThisDc
 		for _, v := range cfg.DcOptions {
-			v := v.(TL_dcOption)
+			v := v.(DcOption)
 			m.dcOptions = append(m.dcOptions, &v)
 		}
 	} else {
@@ -408,13 +407,13 @@ func (m *MTProto) NewConnection(dcID int32) (*MTProto, error) {
 	}
 
 	if !isOnSameDC {
-		res := m.SendSync(TL_auth_exportAuthorization{DcID: dcID})
-		exported, ok := res.(TL_auth_exportedAuthorization)
+		res := m.SendSync(AuthExportAuthorization{DcID: dcID})
+		exported, ok := res.(AuthExportedAuthorization)
 		if !ok {
 			return nil, merry.New(UnexpectedTL("auth export", res))
 		}
-		res = newMT.SendSync(TL_auth_importAuthorization{ID: exported.ID, Bytes: exported.Bytes})
-		if _, ok := res.(TL_auth_authorization); !ok {
+		res = newMT.SendSync(AuthImportAuthorization{ID: exported.ID, Bytes: exported.Bytes})
+		if _, ok := res.(AuthAuthorization); !ok {
 			return nil, merry.New(UnexpectedTL("auth import", res))
 		}
 	}
@@ -508,22 +507,22 @@ func (m *MTProto) Auth(authData AuthDataProvider) error {
 		return merry.Wrap(err)
 	}
 
-	var authSentCode TL_auth_sentCode
+	var authSentCode AuthSentCode
 	flag := true
 	for flag {
-		x := m.SendSync(TL_auth_sendCode{
+		x := m.SendSync(AuthSendCode{
 			PhoneNumber: phonenumber,
 			ApiID:       m.appCfg.AppID,
 			ApiHash:     m.appCfg.AppHash,
-			Settings:    TL_codeSettings{Flags: 1, CurrentNumber: true},
+			Settings:    CodeSettings{Flags: 1, CurrentNumber: true},
 		})
 		switch x.(type) {
-		case TL_auth_sentCode:
-			authSentCode = x.(TL_auth_sentCode)
+		case AuthSendCode:
+			authSentCode = x.(AuthSentCode)
 			flag = false
-		case TL_rpc_error:
-			x := x.(TL_rpc_error)
-			if x.ErrorCode != TL_ErrSeeOther {
+		case RpcError:
+			x := x.(RpcError)
+			if x.ErrorCode != ErrSeeOther {
 				return WrongRespError(x)
 			}
 			var newDc int32
@@ -549,10 +548,10 @@ func (m *MTProto) Auth(authData AuthDataProvider) error {
 	}
 
 	//if authSentCode.Phone_registered
-	x := m.SendSync(TL_auth_signIn{phonenumber, authSentCode.PhoneCodeHash, code})
+	x := m.SendSync(AuthSignIn{phonenumber, authSentCode.PhoneCodeHash, code})
 	if IsError(x, "SESSION_PASSWORD_NEEDED") {
-		x = m.SendSync(TL_account_getPassword{})
-		accPasswd, ok := x.(TL_account_password)
+		x = m.SendSync(AccountGetPassword{})
+		accPasswd, ok := x.(AccountPassword)
 		if !ok {
 			return WrongRespError(x)
 		}
@@ -562,7 +561,7 @@ func (m *MTProto) Auth(authData AuthDataProvider) error {
 			return merry.Wrap(err)
 		}
 
-		algo, ok := accPasswd.CurrentAlgo.(TL_passwordKdfAlgoSHA256SHA256PBKDF2HMACSHA512iter100000SHA256ModPow)
+		algo, ok := accPasswd.CurrentAlgo.(PasswordKdfAlgoSHA256SHA256PBKDF2HMACSHA512iter100000SHA256ModPow)
 		if !ok {
 			return merry.Errorf("unknown password algo %T, application update is maybe needed to log in",
 				accPasswd.CurrentAlgo)
@@ -571,16 +570,16 @@ func (m *MTProto) Auth(authData AuthDataProvider) error {
 		if err != nil {
 			return merry.Wrap(err)
 		}
-		x = m.SendSync(TL_auth_checkPassword{passwdSRP})
-		if _, ok := x.(TL_rpc_error); ok {
+		x = m.SendSync(AuthCheckPassword{passwdSRP.(InputCheckPasswordSRP)})
+		if _, ok := x.(RpcError); ok {
 			return WrongRespError(x)
 		}
 	}
-	auth, ok := x.(TL_auth_authorization)
+	auth, ok := x.(AuthAuthorization)
 	if !ok {
 		return merry.Errorf("RPC: %#v", x)
 	}
-	userSelf := auth.User.(TL_user)
+	userSelf := auth.User.(User)
 	fmt.Printf("Signed in: id %d name <%s %s>\n", userSelf.ID, userSelf.FirstName, userSelf.LastName)
 	return nil
 }
@@ -597,21 +596,21 @@ func (m *MTProto) AuthBot(authData AuthDataProvider, tokenList ...string) error 
 		token = tokenList[0]
 	}
 
-	var auth TL_auth_authorization
+	var auth AuthAuthorization
 	flag := true
 	for flag {
-		x := m.SendSync(TL_auth_importBotAuthorization{
+		x := m.SendSync(AuthImportBotAuthorization{
 			ApiID:        m.appCfg.AppID,
 			ApiHash:      m.appCfg.AppHash,
 			BotAuthToken: token,
 		})
 		switch x.(type) {
-		case TL_auth_authorization:
-			auth = x.(TL_auth_authorization)
+		case AuthAuthorization:
+			auth = x.(AuthAuthorization)
 			flag = false
-		case TL_rpc_error:
-			x := x.(TL_rpc_error)
-			if x.ErrorCode != TL_ErrSeeOther {
+		case RpcError:
+			x := x.(RpcError)
+			if x.ErrorCode != ErrSeeOther {
 				return WrongRespError(x)
 			}
 			var newDc int32
@@ -631,7 +630,7 @@ func (m *MTProto) AuthBot(authData AuthDataProvider, tokenList ...string) error 
 		}
 	}
 
-	userSelf := auth.User.(TL_user)
+	userSelf := auth.User.(User)
 	fmt.Printf("Signed in: id %d name <%s %s>\n", userSelf.ID, userSelf.FirstName, userSelf.LastName)
 	return nil
 }
@@ -671,15 +670,15 @@ func (m *MTProto) resendPendingPackets() {
 }
 
 func (m *MTProto) GetContacts() error {
-	x := m.SendSync(TL_contacts_getContacts{0})
-	list, ok := x.(TL_contacts_contacts)
+	x := m.SendSync(ContactsGetContacts{0})
+	list, ok := x.(ContactsContacts)
 	if !ok {
 		return merry.Errorf("RPC: %#v", x)
 	}
 
-	contacts := make(map[int32]TL_user)
+	contacts := make(map[int32]User)
 	for _, v := range list.Users {
-		if v, ok := v.(TL_user); ok {
+		if v, ok := v.(User); ok {
 			contacts[v.ID] = v
 		}
 	}
@@ -688,7 +687,7 @@ func (m *MTProto) GetContacts() error {
 		"id", "mutual", "name", "username",
 	)
 	for _, v := range list.Contacts {
-		v := v.(TL_contact)
+		v := v.(Contact)
 		fmt.Printf(
 			"%10d    %10t    %-30s    %-20s\n",
 			v.UserID,
@@ -711,7 +710,7 @@ func (m *MTProto) pingRoutine() {
 		case <-m.routinesStop:
 			return
 		case <-time.After(60 * time.Second):
-			m.extSendQueue <- newPacket(TL_ping{0xCADACADA}, nil)
+			m.extSendQueue <- newPacket(Ping{0xCADACADA}, nil)
 		}
 	}
 }
@@ -835,31 +834,31 @@ func (m *MTProto) respAndClearPacketData(msgID int64, response TL) {
 
 func (m *MTProto) process(msgId int64, seqNo int32, dataTL TL, mayPassToHandler bool) {
 	switch data := dataTL.(type) {
-	case TL_msg_container:
+	case MsgContainer:
 		for _, v := range data.Items {
 			m.process(v.MsgID, v.SeqNo, v.Data, true)
 		}
 
-	case TL_bad_server_salt:
+	case BadServerSalt:
 		m.session.ServerSalt = data.NewServerSalt
 		m.resendPendingPackets()
 
-	case TL_bad_msg_notification:
+	case BadMsgNotification:
 		m.respAndClearPacketData(data.BadMsgID, data)
 
-	case TL_msgs_state_info:
+	case MsgsStateInfo:
 		m.respAndClearPacketData(data.ReqMsgID, data)
 
-	case TL_new_session_created:
+	case NewSessionCreated:
 		m.session.ServerSalt = data.ServerSalt
 
-	case TL_ping:
-		m.sendQueue <- newPacket(TL_pong{msgId, data.PingID}, nil)
+	case Ping:
+		m.sendQueue <- newPacket(Pong{msgId, data.PingID}, nil)
 
-	case TL_pong:
+	case Pong:
 		// (ignore)
 
-	case TL_msgs_ack:
+	case MsgsAck:
 		m.mutex.Lock()
 		for _, id := range data.MsgIds {
 			packet, ok := m.msgsByID[id]
@@ -873,7 +872,7 @@ func (m *MTProto) process(msgId int64, seqNo int32, dataTL TL, mayPassToHandler 
 		}
 		m.mutex.Unlock()
 
-	case TL_rpc_result:
+	case RpcResult:
 		m.process(msgId, 0, data.obj, false)
 		m.respAndClearPacketData(data.reqMsgID, data.obj)
 
@@ -885,6 +884,6 @@ func (m *MTProto) process(msgId int64, seqNo int32, dataTL TL, mayPassToHandler 
 
 	// should acknowledge odd ids
 	if (seqNo & 1) == 1 {
-		m.sendQueue <- newPacket(TL_msgs_ack{[]int64{msgId}}, nil)
+		m.sendQueue <- newPacket(MsgsAck{[]int64{msgId}}, nil)
 	}
 }

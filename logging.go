@@ -15,13 +15,13 @@ func TLName(obj interface{}) string {
 func StringifyMessage(isIncoming bool, msg TL, id int64) string {
 	var text string
 	switch x := msg.(type) {
-	case TL_msg_container:
+	case MsgContainer:
 		names := make([]string, len(x.Items))
 		for i, item := range x.Items {
 			names[i] = TLName(item)
 		}
 		text = TLName(x) + " -> [" + strings.Join(names, ", ") + "]"
-	case TL_rpc_result:
+	case RpcResult:
 		text = TLName(x) + " -> " + TLName(x.obj)
 	default:
 		text = TLName(x)

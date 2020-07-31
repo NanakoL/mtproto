@@ -82,7 +82,7 @@ func (e *EncodeBuf) Bytes(s []byte) {
 
 func (e *EncodeBuf) VectorInt(v []int32) {
 	x := make([]byte, 4+4+len(v)*4)
-	binary.LittleEndian.PutUint32(x, CRC_vector)
+	binary.LittleEndian.PutUint32(x, crcVector)
 	binary.LittleEndian.PutUint32(x[4:], uint32(len(v)))
 	i := 8
 	for _, v := range v {
@@ -94,7 +94,7 @@ func (e *EncodeBuf) VectorInt(v []int32) {
 
 func (e *EncodeBuf) VectorLong(v []int64) {
 	x := make([]byte, 4+4+len(v)*8)
-	binary.LittleEndian.PutUint32(x, CRC_vector)
+	binary.LittleEndian.PutUint32(x, crcVector)
 	binary.LittleEndian.PutUint32(x[4:], uint32(len(v)))
 	i := 8
 	for _, v := range v {
@@ -106,7 +106,7 @@ func (e *EncodeBuf) VectorLong(v []int64) {
 
 func (e *EncodeBuf) VectorString(v []string) {
 	x := make([]byte, 8)
-	binary.LittleEndian.PutUint32(x, CRC_vector)
+	binary.LittleEndian.PutUint32(x, crcVector)
 	binary.LittleEndian.PutUint32(x[4:], uint32(len(v)))
 	e.buf = append(e.buf, x...)
 	for _, v := range v {
@@ -116,7 +116,7 @@ func (e *EncodeBuf) VectorString(v []string) {
 
 func (e *EncodeBuf) Vector(v []TL) {
 	x := make([]byte, 8)
-	binary.LittleEndian.PutUint32(x, CRC_vector)
+	binary.LittleEndian.PutUint32(x, crcVector)
 	binary.LittleEndian.PutUint32(x[4:], uint32(len(v)))
 	e.buf = append(e.buf, x...)
 	for _, v := range v {

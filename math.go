@@ -3,7 +3,7 @@ package mtproto
 import (
 	"crypto/aes"
 	"crypto/rsa"
-	sha1lib "crypto/sha1"
+	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
 	"math/big"
@@ -27,12 +27,12 @@ func init() {
 	telegramPublicKey.E = tgPublicKeyE
 }
 
-func sha1(data []byte) []byte {
-	r := sha1lib.Sum(data)
+func sha1Sum(data []byte) []byte {
+	r := sha1.Sum(data)
 	return r[:]
 }
 
-func sha256some(buffers ...[]byte) []byte {
+func sha256Sum(buffers ...[]byte) []byte {
 	s := sha256.New()
 	for _, buf := range buffers {
 		s.Write(buf)
@@ -53,7 +53,7 @@ func bigIntPaddedBytes(num *big.Int, size int) []byte {
 	return buf
 }
 
-func doRSAencrypt(em []byte) []byte {
+func doRSAEncrypt(em []byte) []byte {
 	z := make([]byte, 255)
 	copy(z, em)
 
@@ -182,10 +182,10 @@ func generateAES(msgKey, authKey []byte, decode bool) ([]byte, []byte) {
 	tD = append(tD, msgKey...)
 	tD = append(tD, authKey[96+x:96+x+32]...)
 
-	sha1A := sha1(tA)
-	sha1B := sha1(tB)
-	sha1C := sha1(tC)
-	sha1D := sha1(tD)
+	sha1A := sha1.Sum(tA)
+	sha1B := sha1.Sum(tB)
+	sha1C := sha1.Sum(tC)
+	sha1D := sha1.Sum(tD)
 
 	aesKey = append(aesKey, sha1A[0:8]...)
 	aesKey = append(aesKey, sha1B[8:8+12]...)
@@ -309,10 +309,10 @@ func calcInputCheckPasswordSRP(
 	}
 
 	// calc_password_hash
-	buf := sha256some(clientSalt, []byte(password), clientSalt)
-	buf = sha256some(serverSalt, buf, serverSalt)
+	buf := sha256Sum(clientSalt, []byte(password), clientSalt)
+	buf = sha256Sum(serverSalt, buf, serverSalt)
 	hash := pbkdf2.Key(buf, clientSalt, 100000, 64, sha512.New)
-	xBuf := sha256some(serverSalt, hash, serverSalt)
+	xBuf := sha256Sum(serverSalt, hash, serverSalt)
 	xNum := new(big.Int).SetBytes(xBuf)
 	// /calc_password_hash
 
@@ -327,9 +327,9 @@ func calcInputCheckPasswordSRP(
 	ANum := new(big.Int).Exp(gNum, aNum, pNum)
 	ABuf := bigIntPaddedBytes(ANum, 256)
 
-	uBuf := sha256some(ABuf, BBuf)
+	uBuf := sha256Sum(ABuf, BBuf)
 	uNum := new(big.Int).SetBytes(uBuf)
-	kBuf := sha256some(pBuf, gBuf)
+	kBuf := sha256Sum(pBuf, gBuf)
 	kNum := new(big.Int).SetBytes(kBuf)
 
 	vNum := new(big.Int).Exp(gNum, xNum, pNum)
@@ -345,14 +345,14 @@ func calcInputCheckPasswordSRP(
 
 	SNum := new(big.Int).Exp(tNum, expNum, pNum)
 	SBuf := bigIntPaddedBytes(SNum, 256)
-	KBuf := sha256some(SBuf)
+	KBuf := sha256Sum(SBuf)
 
-	h1 := sha256some(pBuf)
-	h2 := sha256some(gBuf)
+	h1 := sha256Sum(pBuf)
+	h2 := sha256Sum(gBuf)
 	xor(h1, h2)
-	clientSaltHash := sha256some(clientSalt)
-	serverSaltHash := sha256some(serverSalt)
-	MBuf := sha256some(h1, clientSaltHash, serverSaltHash, ABuf, BBuf, KBuf)
+	clientSaltHash := sha256Sum(clientSalt)
+	serverSaltHash := sha256Sum(serverSalt)
+	MBuf := sha256Sum(h1, clientSaltHash, serverSaltHash, ABuf, BBuf, KBuf)
 	logDebug("srpID: %#v", srpID)
 	logDebug("ABuf:  %#v", ABuf)
 	logDebug("MBuf:  %#v", MBuf)

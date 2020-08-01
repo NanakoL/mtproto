@@ -467,34 +467,26 @@ func (m *MTProto) SendSyncRetry(
 type AuthDataProvider interface {
 	PhoneNumber() (string, error)
 	Code() (string, error)
-	Token() (string, error)
 	Password() (string, error)
 }
 
-type ScanfAuthDataProvider struct{}
+type BaseAuth struct{}
 
-func (ap ScanfAuthDataProvider) PhoneNumber() (string, error) {
+func (ap BaseAuth) PhoneNumber() (string, error) {
 	var phonenumber string
 	fmt.Print("Enter phone number: ")
 	_, _ = fmt.Scanf("%s", &phonenumber)
 	return phonenumber, nil
 }
 
-func (ap ScanfAuthDataProvider) Code() (string, error) {
+func (ap BaseAuth) Code() (string, error) {
 	var code string
 	fmt.Print("Enter code: ")
 	_, _ = fmt.Scanf("%s", &code)
 	return code, nil
 }
 
-func (ap ScanfAuthDataProvider) Token() (string, error) {
-	var code string
-	fmt.Print("Enter token: ")
-	_, _ = fmt.Scanf("%s", &code)
-	return code, nil
-}
-
-func (ap ScanfAuthDataProvider) Password() (string, error) {
+func (ap BaseAuth) Password() (string, error) {
 	var passwd string
 	fmt.Print("Enter password: ")
 	_, _ = fmt.Scanf("%s", &passwd)
@@ -584,17 +576,7 @@ func (m *MTProto) Auth(authData AuthDataProvider) error {
 	return nil
 }
 
-func (m *MTProto) AuthBot(authData AuthDataProvider, tokenList ...string) error {
-	var token string
-	var err error
-	if len(tokenList) == 0 {
-		token, err = authData.Token()
-		if err != nil {
-			return merry.Wrap(err)
-		}
-	} else {
-		token = tokenList[0]
-	}
+func (m *MTProto) AuthBot(token string) error {
 
 	var auth AuthAuthorization
 	flag := true

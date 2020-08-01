@@ -2,6 +2,7 @@ package mtproto
 
 import (
 	"bytes"
+	"crypto/sha1"
 	"encoding/binary"
 	"fmt"
 	"time"
@@ -47,7 +48,7 @@ func (m *MTProto) send(packet *packetToSend) error {
 		z.Int(int32(len(obj)))
 		z.Bytes(obj)
 
-		msgKey := sha1(z.buf)[4:20]
+		msgKey := sha1Sum(z.buf)[4:20]
 		aesKey, aesIV := generateAES(msgKey, m.session.AuthKey, false)
 
 		y := make([]byte, len(z.buf)+((16-(len(obj)%16))&15))
@@ -170,14 +171,11 @@ func (m *MTProto) read() (TL, error) {
 		if int(messageLen)+32 > len(dbuf.buf) {
 			panic(fmt.Sprintf("AHTUNG!!! %d(%d) + 32 > %d", messageLen, int(messageLen), len(dbuf.buf)))
 		}
-		hash := sha1(dbuf.buf[0 : 32+messageLen])
-		if len(hash) < 20 {
-			panic(fmt.Sprintf("AHTUNG!!! %d < 20", len(hash)))
-		}
+		hash := sha1.Sum(dbuf.buf[0 : 32+messageLen])
 		if !bytes.Equal(hash[4:20], msgKey) {
 			return nil, merry.New("Wrong msg_key")
 		}
-		// if !bytes.Equal(sha1(dbuf.buf[0 : 32+messageLen])[4:20], msgKey) {
+		// if !bytes.Equal(sha1.Sum(dbuf.buf[0 : 32+messageLen])[4:20], msgKey) {
 		// 	return nil, merry.New("Wrong msg_key")
 		// }
 		// DEBUG ^^^
@@ -238,9 +236,9 @@ func (m *MTProto) makeAuthKey() error {
 	innerData1 := (PQInnerDataDc{res.Pq, big2str(p), big2str(q), nonceFirst, nonceServer, nonceSecond, m.session.DcID}).encode()
 
 	x = make([]byte, 255)
-	copy(x[0:], sha1(innerData1))
+	copy(x[0:], sha1Sum(innerData1))
 	copy(x[20:], innerData1)
-	encryptedData1 := doRSAencrypt(x)
+	encryptedData1 := doRSAEncrypt(x)
 
 	// (send) req_DH_params
 	err = m.justSend(ReqDHParams{nonceFirst, nonceServer, big2str(p), big2str(q), tgPublicKeyFP, string(encryptedData1)})
@@ -266,17 +264,17 @@ func (m *MTProto) makeAuthKey() error {
 	t1 := make([]byte, 48)
 	copy(t1[0:], nonceSecond)
 	copy(t1[32:], nonceServer)
-	hash1 := sha1(t1)
+	hash1 := sha1Sum(t1)
 
 	t2 := make([]byte, 48)
 	copy(t2[0:], nonceServer)
 	copy(t2[16:], nonceSecond)
-	hash2 := sha1(t2)
+	hash2 := sha1Sum(t2)
 
 	t3 := make([]byte, 64)
 	copy(t3[0:], nonceSecond)
 	copy(t3[32:], nonceSecond)
-	hash3 := sha1(t3)
+	hash3 := sha1Sum(t3)
 
 	tmpAESKey := make([]byte, 32)
 	tmpAESIV := make([]byte, 32)
@@ -309,26 +307,26 @@ func (m *MTProto) makeAuthKey() error {
 		return merry.New("Handshake: Wrong server_nonce")
 	}
 
-	_, g_b, g_ab := makeGAB(dhi.G, str2big(dhi.GA), str2big(dhi.DhPrime))
-	m.session.AuthKey = g_ab.Bytes()
+	_, gB, gAb := makeGAB(dhi.G, str2big(dhi.GA), str2big(dhi.DhPrime))
+	m.session.AuthKey = gAb.Bytes()
 	if m.session.AuthKey[0] == 0 { //TODO: what?
 		m.session.AuthKey = m.session.AuthKey[1:]
 	}
-	m.session.AuthKeyHash = sha1(m.session.AuthKey)[12:20]
+	m.session.AuthKeyHash = sha1Sum(m.session.AuthKey)[12:20]
 	t4 := make([]byte, 32+1+8)
 	copy(t4[0:], nonceSecond)
 	t4[32] = 1
-	copy(t4[33:], sha1(m.session.AuthKey)[0:8])
-	nonceHash1 := sha1(t4)[4:20]
+	copy(t4[33:], sha1Sum(m.session.AuthKey)[0:8])
+	nonceHash1 := sha1Sum(t4)[4:20]
 	saltBuf := make([]byte, 8)
 	copy(saltBuf, nonceSecond[:8])
 	xor(saltBuf, nonceServer[:8])
 	m.session.ServerSalt = int64(binary.LittleEndian.Uint64(saltBuf))
 
 	// (encoding) client_DH_inner_data
-	innerData2 := (ClientDHInnerData{nonceFirst, nonceServer, 0, big2str(g_b)}).encode()
+	innerData2 := (ClientDHInnerData{nonceFirst, nonceServer, 0, big2str(gB)}).encode()
 	x = make([]byte, 20+len(innerData2)+(16-((20+len(innerData2))%16))&15)
-	copy(x[0:], sha1(innerData2))
+	copy(x[0:], sha1Sum(innerData2))
 	copy(x[20:], innerData2)
 	encryptedData2, err := doAES256IGEencrypt(x, tmpAESKey, tmpAESIV)
 

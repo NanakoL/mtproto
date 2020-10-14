@@ -1,11 +1,9 @@
 package mtproto
 
-import (
-	"github.com/ansel1/merry"
-)
+import "fmt"
 
 const (
-	Layer                                                                = 116
+	Layer                                                                = 119
 	crcResPQ                                                             = 0x05162463
 	crcPQInnerDataDc                                                     = 0xa9f55f95
 	crcPQInnerDataTempDc                                                 = 0x56fddf88
@@ -54,6 +52,11 @@ const (
 	crcBoolTrue                                                          = 0x997275b5
 	crcError                                                             = 0xc4b9f9bb
 	crcIpPort                                                            = 0xd433ad73
+	crcIpPortSecret                                                      = 0x37982646
+	crcAccessPointRule                                                   = 0x4679b65f
+	crcHelpConfigSimple                                                  = 0x5a592a6c
+	crcTestUseError                                                      = 0xee75af01
+	crcTestUseConfigSimple                                               = 0xf9b7b23d
 	crcInputPeerEmpty                                                    = 0x7f3b18ea
 	crcInputPeerSelf                                                     = 0x7da07ec9
 	crcInputPeerChat                                                     = 0x179be863
@@ -137,8 +140,8 @@ const (
 	crcChatPhotoEmpty                                                    = 0x37c1011c
 	crcChatPhoto                                                         = 0xd20b9f3c
 	crcMessageEmpty                                                      = 0x83e5de54
-	crcMessage                                                           = 0x452c0e65
-	crcMessageService                                                    = 0x9e19a1f6
+	crcMessage                                                           = 0x58ae39c9
+	crcMessageService                                                    = 0x286fa604
 	crcMessageMediaEmpty                                                 = 0x3ded6320
 	crcMessageMediaPhoto                                                 = 0x695150d7
 	crcMessageMediaGeo                                                   = 0x56e0d474
@@ -183,6 +186,7 @@ const (
 	crcPhotoSize                                                         = 0x77bfb61b
 	crcPhotoCachedSize                                                   = 0xe9a734fa
 	crcPhotoStrippedSize                                                 = 0xe0b0bc2e
+	crcPhotoSizeProgressive                                              = 0x5aa86a51
 	crcGeoPointEmpty                                                     = 0x1117dd5f
 	crcGeoPoint                                                          = 0x0296f104
 	crcAuthSentCode                                                      = 0x5e002502
@@ -208,13 +212,12 @@ const (
 	crcUserFull                                                          = 0xedf17c12
 	crcContact                                                           = 0xf911c994
 	crcImportedContact                                                   = 0xd0028438
-	crcContactBlocked                                                    = 0x561bc879
 	crcContactStatus                                                     = 0xd3680c61
 	crcContactsContactsNotModified                                       = 0xb74ba9d2
 	crcContactsContacts                                                  = 0xeae87e42
 	crcContactsImportedContacts                                          = 0x77d01c3b
-	crcContactsBlocked                                                   = 0x1c138d15
-	crcContactsBlockedSlice                                              = 0x900802a1
+	crcContactsBlocked                                                   = 0x0ade1591
+	crcContactsBlockedSlice                                              = 0xe1664194
 	crcMessagesDialogs                                                   = 0x15ba6c40
 	crcMessagesDialogsSlice                                              = 0x71e094f3
 	crcMessagesDialogsNotModified                                        = 0xf0e3e596
@@ -258,7 +261,6 @@ const (
 	crcUpdateChatParticipantAdd                                          = 0xea4b0e5c
 	crcUpdateChatParticipantDelete                                       = 0x6e5f8c22
 	crcUpdateDcOptions                                                   = 0x8e5e9873
-	crcUpdateUserBlocked                                                 = 0x80ece81a
 	crcUpdateNotifySettings                                              = 0xbec268ef
 	crcUpdateServiceNotification                                         = 0xebe46819
 	crcUpdatePrivacy                                                     = 0xee3b272a
@@ -324,14 +326,19 @@ const (
 	crcUpdateDialogFilters                                               = 0x3504914f
 	crcUpdatePhoneCallSignalingData                                      = 0x2661bf09
 	crcUpdateChannelParticipant                                          = 0x65d2b464
+	crcUpdateChannelMessageForwards                                      = 0x6e8a84df
+	crcUpdateReadChannelDiscussionInbox                                  = 0x1cc7de54
+	crcUpdateReadChannelDiscussionOutbox                                 = 0x4638a26c
+	crcUpdatePeerBlocked                                                 = 0x246a4b22
+	crcUpdateChannelUserTyping                                           = 0xff2abe9f
 	crcUpdatesState                                                      = 0xa56c2a3e
 	crcUpdatesDifferenceEmpty                                            = 0x5d75a138
 	crcUpdatesDifference                                                 = 0x00f49ca0
 	crcUpdatesDifferenceSlice                                            = 0xa8fb1981
 	crcUpdatesDifferenceTooLong                                          = 0x4afe8f6d
 	crcUpdatesTooLong                                                    = 0xe317af7e
-	crcUpdateShortMessage                                                = 0x914fbf11
-	crcUpdateShortChatMessage                                            = 0x16812688
+	crcUpdateShortMessage                                                = 0x2296d2c8
+	crcUpdateShortChatMessage                                            = 0x402d5dbb
 	crcUpdateShort                                                       = 0x78d4dec1
 	crcUpdatesCombined                                                   = 0x725b04c3
 	crcUpdates                                                           = 0x74ae4240
@@ -462,7 +469,7 @@ const (
 	crcBotInfo                                                           = 0x98e81d3a
 	crcKeyboardButton                                                    = 0xa2fa4880
 	crcKeyboardButtonUrl                                                 = 0x258aff05
-	crcKeyboardButtonCallback                                            = 0x683a5e46
+	crcKeyboardButtonCallback                                            = 0x35bbdb6b
 	crcKeyboardButtonRequestPhone                                        = 0xb16a6c29
 	crcKeyboardButtonRequestGeoLocation                                  = 0xfc796b3f
 	crcKeyboardButtonSwitchInline                                        = 0x0568a748
@@ -507,7 +514,7 @@ const (
 	crcChannelMessagesFilter                                             = 0xcd77d957
 	crcChannelParticipant                                                = 0x15ebac1d
 	crcChannelParticipantSelf                                            = 0xa3289a6d
-	crcChannelParticipantCreator                                         = 0x808d15a4
+	crcChannelParticipantCreator                                         = 0x447dca4b
 	crcChannelParticipantAdmin                                           = 0xccbebbaf
 	crcChannelParticipantBanned                                          = 0x1c0facaf
 	crcChannelParticipantsRecent                                         = 0xde3f3c79
@@ -542,7 +549,7 @@ const (
 	crcBotInlineMediaResult                                              = 0x17db940b
 	crcMessagesBotResults                                                = 0x947ca848
 	crcExportedMessageLink                                               = 0x5dab1af4
-	crcMessageFwdHeader                                                  = 0x353a686b
+	crcMessageFwdHeader                                                  = 0x5f777dce
 	crcAuthCodeTypeSms                                                   = 0x72a3158c
 	crcAuthCodeTypeCall                                                  = 0x741cd3e3
 	crcAuthCodeTypeFlashCall                                             = 0x226ccefb
@@ -670,6 +677,7 @@ const (
 	crcPhoneCall                                                         = 0x8742ae7f
 	crcPhoneCallDiscarded                                                = 0x50ca4de1
 	crcPhoneConnection                                                   = 0x9d4c17c0
+	crcPhoneConnectionWebrtc                                             = 0x635fe375
 	crcPhoneCallProtocol                                                 = 0xfc878fc8
 	crcPhonePhoneCall                                                    = 0xec82e140
 	crcUploadCdnFileReuploadNeeded                                       = 0xeea8e46e
@@ -878,6 +886,17 @@ const (
 	crcStatsGroupTopInviter                                              = 0x31962a4c
 	crcStatsMegagroupStats                                               = 0xef7ff916
 	crcGlobalPrivacySettings                                             = 0xbea2f424
+	crcHelpCountryCode                                                   = 0x4203c5ef
+	crcHelpCountry                                                       = 0xc3878e23
+	crcHelpCountriesListNotModified                                      = 0x93cc1f32
+	crcHelpCountriesList                                                 = 0x87d0759e
+	crcMessageViews                                                      = 0x455b853d
+	crcMessagesMessageViews                                              = 0xb6c4f543
+	crcStatsMessageStats                                                 = 0x8999f295
+	crcMessagesDiscussionMessage                                         = 0xf5dd8f9d
+	crcMessageReplyHeader                                                = 0xa6d57763
+	crcMessageReplies                                                    = 0x4128faac
+	crcPeerBlocked                                                       = 0xe8fd8014
 	crcInvokeAfterMsg                                                    = 0xcb9f372d
 	crcInvokeAfterMsgs                                                   = 0x3dc4b4f0
 	crcInitConnection                                                    = 0xc1cd5ea9
@@ -979,8 +998,8 @@ const (
 	crcContactsImportContacts                                            = 0x2c800be5
 	crcContactsDeleteContacts                                            = 0x096a0e00
 	crcContactsDeleteByPhones                                            = 0x1013fd9e
-	crcContactsBlock                                                     = 0x332b49fc
-	crcContactsUnblock                                                   = 0xe54100bd
+	crcContactsBlock                                                     = 0x68cc1411
+	crcContactsUnblock                                                   = 0xbea65d50
 	crcContactsGetBlocked                                                = 0xf57c350f
 	crcContactsSearch                                                    = 0x11f812d8
 	crcContactsResolveUsername                                           = 0xf93ccba3
@@ -992,15 +1011,16 @@ const (
 	crcContactsAddContact                                                = 0xe8f463d0
 	crcContactsAcceptContact                                             = 0xf831a20f
 	crcContactsGetLocated                                                = 0xd348bc44
+	crcContactsBlockFromReplies                                          = 0x29a8962c
 	crcMessagesGetMessages                                               = 0x63c66506
 	crcMessagesGetDialogs                                                = 0xa0ee3b73
 	crcMessagesGetHistory                                                = 0xdcbb8260
-	crcMessagesSearch                                                    = 0x8614ef68
+	crcMessagesSearch                                                    = 0x4e17810b
 	crcMessagesReadHistory                                               = 0x0e306d3a
 	crcMessagesDeleteHistory                                             = 0x1c015b09
 	crcMessagesDeleteMessages                                            = 0xe58e95d2
 	crcMessagesReceivedMessages                                          = 0x05a954c0
-	crcMessagesSetTyping                                                 = 0xa3825e50
+	crcMessagesSetTyping                                                 = 0x58943ee2
 	crcMessagesSendMessage                                               = 0x520c3870
 	crcMessagesSendMedia                                                 = 0x3491eba9
 	crcMessagesForwardMessages                                           = 0xd9fee60e
@@ -1020,8 +1040,8 @@ const (
 	crcMessagesDiscardEncryption                                         = 0xedd923c5
 	crcMessagesSetEncryptedTyping                                        = 0x791451ed
 	crcMessagesReadEncryptedHistory                                      = 0x7f4b690a
-	crcMessagesSendEncrypted                                             = 0xa9776773
-	crcMessagesSendEncryptedFile                                         = 0x9a901b66
+	crcMessagesSendEncrypted                                             = 0x44fa7a15
+	crcMessagesSendEncryptedFile                                         = 0x5559481d
 	crcMessagesSendEncryptedService                                      = 0x32d439a4
 	crcMessagesReceivedQueue                                             = 0x55a5bb66
 	crcMessagesReportEncryptedSpam                                       = 0x4b0c8c0f
@@ -1036,10 +1056,10 @@ const (
 	crcMessagesInstallStickerSet                                         = 0xc78fe460
 	crcMessagesUninstallStickerSet                                       = 0xf96e55de
 	crcMessagesStartBot                                                  = 0xe6df7378
-	crcMessagesGetMessagesViews                                          = 0xc4c8a55d
+	crcMessagesGetMessagesViews                                          = 0x5784d3e1
 	crcMessagesEditChatAdmin                                             = 0xa9e69f2e
 	crcMessagesMigrateChat                                               = 0x15a3b8e3
-	crcMessagesSearchGlobal                                              = 0xbf7225a4
+	crcMessagesSearchGlobal                                              = 0x4bc6589a
 	crcMessagesReorderStickerSets                                        = 0x78337739
 	crcMessagesGetDocumentByHash                                         = 0x338e2464
 	crcMessagesGetSavedGifs                                              = 0x83bf3d52
@@ -1050,7 +1070,7 @@ const (
 	crcMessagesGetMessageEditData                                        = 0xfda68d36
 	crcMessagesEditMessage                                               = 0x48f71778
 	crcMessagesEditInlineBotMessage                                      = 0x83557dba
-	crcMessagesGetBotCallbackAnswer                                      = 0x810a9fec
+	crcMessagesGetBotCallbackAnswer                                      = 0x9342ca07
 	crcMessagesSetBotCallbackAnswer                                      = 0xd58f130a
 	crcMessagesGetPeerDialogs                                            = 0xe470bcfd
 	crcMessagesSaveDraft                                                 = 0xbc39e14b
@@ -1115,6 +1135,9 @@ const (
 	crcMessagesUpdateDialogFilter                                        = 0x1ad4a04a
 	crcMessagesUpdateDialogFiltersOrder                                  = 0xc563c1e4
 	crcMessagesGetOldFeaturedStickers                                    = 0x5fe7025b
+	crcMessagesGetReplies                                                = 0x24b581ba
+	crcMessagesGetDiscussionMessage                                      = 0x446972fd
+	crcMessagesReadDiscussion                                            = 0xf731a9f4
 	crcUpdatesGetState                                                   = 0xedd4882a
 	crcUpdatesGetDifference                                              = 0x25939651
 	crcUpdatesGetChannelDifference                                       = 0x03173d78
@@ -1151,6 +1174,7 @@ const (
 	crcHelpGetPromoData                                                  = 0xc0977421
 	crcHelpHidePromoData                                                 = 0x1e251c95
 	crcHelpDismissSuggestion                                             = 0x077fa99f
+	crcHelpGetCountriesList                                              = 0x735787a8
 	crcChannelsReadHistory                                               = 0xcc104937
 	crcChannelsDeleteMessages                                            = 0x84c1fd4e
 	crcChannelsDeleteUserHistory                                         = 0xd10dd71b
@@ -1170,7 +1194,7 @@ const (
 	crcChannelsLeaveChannel                                              = 0xf836aa95
 	crcChannelsInviteToChannel                                           = 0x199f3a6c
 	crcChannelsDeleteChannel                                             = 0xc0111fe3
-	crcChannelsExportMessageLink                                         = 0xceb77163
+	crcChannelsExportMessageLink                                         = 0xe63fadeb
 	crcChannelsToggleSignatures                                          = 0x1f69b606
 	crcChannelsGetAdminedPublicChannels                                  = 0xf8b036af
 	crcChannelsEditBanned                                                = 0x72796912
@@ -1220,6 +1244,8 @@ const (
 	crcStatsGetBroadcastStats                                            = 0xab42441a
 	crcStatsLoadAsyncGraph                                               = 0x621d5fa0
 	crcStatsGetMegagroupStats                                            = 0xdcdf8607
+	crcStatsGetMessagePublicForwards                                     = 0x5630281b
+	crcStatsGetMessageStats                                              = 0xb6e0a3f5
 )
 
 type ResPQ struct {
@@ -1475,6 +1501,30 @@ type Error struct {
 type IpPort struct {
 	Ipv4 int32
 	Port int32
+}
+
+type IpPortSecret struct {
+	Ipv4   int32
+	Port   int32
+	Secret []byte
+}
+
+type AccessPointRule struct {
+	PhonePrefixRules string
+	DcID             int32
+	Ips              []TL // IpPort
+}
+
+type HelpConfigSimple struct {
+	Date    int32
+	Expires int32
+	Rules   []TL // AccessPointRule
+}
+
+type TestUseError struct {
+}
+
+type TestUseConfigSimple struct {
 }
 
 type InputPeerEmpty struct {
@@ -1796,6 +1846,7 @@ type User struct {
 	BotInlineGeo         bool // flag
 	Support              bool // flag
 	Scam                 bool // flag
+	ApplyMinPhoto        bool // flag
 	ID                   int32
 	AccessHash           int64  // flag
 	FirstName            string // flag
@@ -1927,9 +1978,10 @@ type ChannelFull struct {
 	CanSetUsername       bool // flag
 	CanSetStickers       bool // flag
 	HiddenPrehistory     bool // flag
-	CanViewStats         bool // flag
 	CanSetLocation       bool // flag
 	HasScheduled         bool // flag
+	CanViewStats         bool // flag
+	Blocked              bool // flag
 	ID                   int32
 	About                string
 	ParticipantsCount    int32 // flag
@@ -2012,17 +2064,19 @@ type Message struct {
 	Legacy            bool // flag
 	EditHide          bool // flag
 	ID                int32
-	FromID            int32 // flag
-	ToID              TL    // Peer
+	FromID            TL    // Peer // flag
+	PeerID            TL    // Peer
 	FwdFrom           TL    // MessageFwdHeader // flag
 	ViaBotID          int32 // flag
-	ReplyToMsgID      int32 // flag
+	ReplyTo           TL    // MessageReplyHeader // flag
 	Date              int32
 	Message           string
 	Media             TL     // MessageMedia // flag
 	ReplyMarkup       TL     // ReplyMarkup // flag
 	Entities          []TL   // MessageEntity // flag
 	Views             int32  // flag
+	Forwards          int32  // flag
+	Replies           TL     // MessageReplies // flag
 	EditDate          int32  // flag
 	PostAuthor        string // flag
 	GroupedID         int64  // flag
@@ -2030,19 +2084,19 @@ type Message struct {
 }
 
 type MessageService struct {
-	Flags        int32
-	Out          bool // flag
-	Mentioned    bool // flag
-	MediaUnread  bool // flag
-	Silent       bool // flag
-	Post         bool // flag
-	Legacy       bool // flag
-	ID           int32
-	FromID       int32 // flag
-	ToID         TL    // Peer
-	ReplyToMsgID int32 // flag
-	Date         int32
-	Action       TL // MessageAction
+	Flags       int32
+	Out         bool // flag
+	Mentioned   bool // flag
+	MediaUnread bool // flag
+	Silent      bool // flag
+	Post        bool // flag
+	Legacy      bool // flag
+	ID          int32
+	FromID      TL // Peer // flag
+	PeerID      TL // Peer
+	ReplyTo     TL // MessageReplyHeader // flag
+	Date        int32
+	Action      TL // MessageAction
 }
 
 type MessageMediaEmpty struct {
@@ -2290,6 +2344,14 @@ type PhotoStrippedSize struct {
 	Bytes []byte
 }
 
+type PhotoSizeProgressive struct {
+	Type     string
+	Location TL // FileLocation
+	W        int32
+	H        int32
+	Sizes    []int32
+}
+
 type GeoPointEmpty struct {
 }
 
@@ -2413,6 +2475,7 @@ type UserFull struct {
 	PhoneCallsPrivate   bool   // flag
 	CanPinMessage       bool   // flag
 	HasScheduled        bool   // flag
+	VideoCallsAvailable bool   // flag
 	User                TL     // User
 	About               string // flag
 	Settings            TL     // PeerSettings
@@ -2432,11 +2495,6 @@ type Contact struct {
 type ImportedContact struct {
 	UserID   int32
 	ClientID int64
-}
-
-type ContactBlocked struct {
-	UserID int32
-	Date   int32
 }
 
 type ContactStatus struct {
@@ -2461,13 +2519,15 @@ type ContactsImportedContacts struct {
 }
 
 type ContactsBlocked struct {
-	Blocked []TL // ContactBlocked
+	Blocked []TL // PeerBlocked
+	Chats   []TL // Chat
 	Users   []TL // User
 }
 
 type ContactsBlockedSlice struct {
 	Count   int32
-	Blocked []TL // ContactBlocked
+	Blocked []TL // PeerBlocked
+	Chats   []TL // Chat
 	Users   []TL // User
 }
 
@@ -2678,11 +2738,6 @@ type UpdateChatParticipantDelete struct {
 
 type UpdateDcOptions struct {
 	DcOptions []TL // DcOption
-}
-
-type UpdateUserBlocked struct {
-	UserID  int32
-	Blocked TL // Bool
 }
 
 type UpdateNotifySettings struct {
@@ -3054,6 +3109,40 @@ type UpdateChannelParticipant struct {
 	Qts             int32
 }
 
+type UpdateChannelMessageForwards struct {
+	ChannelID int32
+	ID        int32
+	Forwards  int32
+}
+
+type UpdateReadChannelDiscussionInbox struct {
+	Flags         int32
+	ChannelID     int32
+	TopMsgID      int32
+	ReadMaxID     int32
+	BroadcastID   int32 // flag
+	BroadcastPost int32 // flag
+}
+
+type UpdateReadChannelDiscussionOutbox struct {
+	ChannelID int32
+	TopMsgID  int32
+	ReadMaxID int32
+}
+
+type UpdatePeerBlocked struct {
+	PeerID  TL // Peer
+	Blocked TL // Bool
+}
+
+type UpdateChannelUserTyping struct {
+	Flags     int32
+	ChannelID int32
+	TopMsgID  int32 // flag
+	UserID    int32
+	Action    TL // SendMessageAction
+}
+
 type UpdatesState struct {
 	Pts         int32
 	Qts         int32
@@ -3093,40 +3182,40 @@ type UpdatesTooLong struct {
 }
 
 type UpdateShortMessage struct {
-	Flags        int32
-	Out          bool // flag
-	Mentioned    bool // flag
-	MediaUnread  bool // flag
-	Silent       bool // flag
-	ID           int32
-	UserID       int32
-	Message      string
-	Pts          int32
-	PtsCount     int32
-	Date         int32
-	FwdFrom      TL    // MessageFwdHeader // flag
-	ViaBotID     int32 // flag
-	ReplyToMsgID int32 // flag
-	Entities     []TL  // MessageEntity // flag
+	Flags       int32
+	Out         bool // flag
+	Mentioned   bool // flag
+	MediaUnread bool // flag
+	Silent      bool // flag
+	ID          int32
+	UserID      int32
+	Message     string
+	Pts         int32
+	PtsCount    int32
+	Date        int32
+	FwdFrom     TL    // MessageFwdHeader // flag
+	ViaBotID    int32 // flag
+	ReplyTo     TL    // MessageReplyHeader // flag
+	Entities    []TL  // MessageEntity // flag
 }
 
 type UpdateShortChatMessage struct {
-	Flags        int32
-	Out          bool // flag
-	Mentioned    bool // flag
-	MediaUnread  bool // flag
-	Silent       bool // flag
-	ID           int32
-	FromID       int32
-	ChatID       int32
-	Message      string
-	Pts          int32
-	PtsCount     int32
-	Date         int32
-	FwdFrom      TL    // MessageFwdHeader // flag
-	ViaBotID     int32 // flag
-	ReplyToMsgID int32 // flag
-	Entities     []TL  // MessageEntity // flag
+	Flags       int32
+	Out         bool // flag
+	Mentioned   bool // flag
+	MediaUnread bool // flag
+	Silent      bool // flag
+	ID          int32
+	FromID      int32
+	ChatID      int32
+	Message     string
+	Pts         int32
+	PtsCount    int32
+	Date        int32
+	FwdFrom     TL    // MessageFwdHeader // flag
+	ViaBotID    int32 // flag
+	ReplyTo     TL    // MessageReplyHeader // flag
+	Entities    []TL  // MessageEntity // flag
 }
 
 type UpdateShort struct {
@@ -3859,8 +3948,10 @@ type KeyboardButtonUrl struct {
 }
 
 type KeyboardButtonCallback struct {
-	Text string
-	Data []byte
+	Flags            int32
+	RequiresPassword bool // flag
+	Text             string
+	Data             []byte
 }
 
 type KeyboardButtonRequestPhone struct {
@@ -4109,9 +4200,10 @@ type ChannelParticipantSelf struct {
 }
 
 type ChannelParticipantCreator struct {
-	Flags  int32
-	UserID int32
-	Rank   string // flag
+	Flags       int32
+	UserID      int32
+	AdminRights TL     // ChatAdminRights
+	Rank        string // flag
 }
 
 type ChannelParticipantAdmin struct {
@@ -4356,10 +4448,9 @@ type ExportedMessageLink struct {
 
 type MessageFwdHeader struct {
 	Flags          int32
-	FromID         int32  // flag
+	FromID         TL     // Peer // flag
 	FromName       string // flag
 	Date           int32
-	ChannelID      int32  // flag
 	ChannelPost    int32  // flag
 	PostAuthor     string // flag
 	SavedFromPeer  TL     // Peer // flag
@@ -5043,6 +5134,7 @@ type PhoneCallAccepted struct {
 type PhoneCall struct {
 	Flags          int32
 	P2pAllowed     bool // flag
+	Video          bool // flag
 	ID             int64
 	AccessHash     int64
 	Date           int32
@@ -5071,6 +5163,18 @@ type PhoneConnection struct {
 	Ipv6    string
 	Port    int32
 	PeerTag []byte
+}
+
+type PhoneConnectionWebrtc struct {
+	Flags    int32
+	Turn     bool // flag
+	Stun     bool // flag
+	ID       int64
+	Ip       string
+	Ipv6     string
+	Port     int32
+	Username string
+	Password string
 }
 
 type PhoneCallProtocol struct {
@@ -5821,6 +5925,7 @@ type ChatAdminRights struct {
 	InviteUsers    bool // flag
 	PinMessages    bool // flag
 	AddAdmins      bool // flag
+	Anonymous      bool // flag
 }
 
 type ChatBannedRights struct {
@@ -6263,6 +6368,80 @@ type StatsMegagroupStats struct {
 type GlobalPrivacySettings struct {
 	Flags                            int32
 	ArchiveAndMuteNewNoncontactPeers TL // Bool // flag
+}
+
+type HelpCountryCode struct {
+	Flags       int32
+	CountryCode string
+	Prefixes    []string // flag
+	Patterns    []string // flag
+}
+
+type HelpCountry struct {
+	Flags        int32
+	Hidden       bool // flag
+	Iso2         string
+	DefaultName  string
+	Name         string // flag
+	CountryCodes []TL   // Help_CountryCode
+}
+
+type HelpCountriesListNotModified struct {
+}
+
+type HelpCountriesList struct {
+	Countries []TL // Help_Country
+	Hash      int32
+}
+
+type MessageViews struct {
+	Flags    int32
+	Views    int32 // flag
+	Forwards int32 // flag
+	Replies  TL    // MessageReplies // flag
+}
+
+type MessagesMessageViews struct {
+	Views []TL // MessageViews
+	Chats []TL // Chat
+	Users []TL // User
+}
+
+type StatsMessageStats struct {
+	ViewsGraph TL // StatsGraph
+}
+
+type MessagesDiscussionMessage struct {
+	Flags           int32
+	Messages        []TL  // Message
+	MaxID           int32 // flag
+	ReadInboxMaxID  int32 // flag
+	ReadOutboxMaxID int32 // flag
+	Chats           []TL  // Chat
+	Users           []TL  // User
+}
+
+type MessageReplyHeader struct {
+	Flags         int32
+	ReplyToMsgID  int32
+	ReplyToPeerID TL    // Peer // flag
+	ReplyToTopID  int32 // flag
+}
+
+type MessageReplies struct {
+	Flags          int32
+	Comments       bool // flag
+	Replies        int32
+	RepliesPts     int32
+	RecentRepliers []TL  // Peer // flag
+	ChannelID      int32 // flag
+	MaxID          int32 // flag
+	ReadMaxID      int32 // flag
+}
+
+type PeerBlocked struct {
+	PeerID TL // Peer
+	Date   int32
 }
 
 type InvokeAfterMsg struct {
@@ -6759,11 +6938,11 @@ type ContactsDeleteByPhones struct {
 }
 
 type ContactsBlock struct {
-	ID TL // InputUser
+	ID TL // InputPeer
 }
 
 type ContactsUnblock struct {
-	ID TL // InputUser
+	ID TL // InputPeer
 }
 
 type ContactsGetBlocked struct {
@@ -6830,6 +7009,14 @@ type ContactsGetLocated struct {
 	SelfExpires int32 // flag
 }
 
+type ContactsBlockFromReplies struct {
+	Flags         int32
+	DeleteMessage bool // flag
+	DeleteHistory bool // flag
+	ReportSpam    bool // flag
+	MsgID         int32
+}
+
 type MessagesGetMessages struct {
 	ID []TL // InputMessage
 }
@@ -6860,8 +7047,9 @@ type MessagesSearch struct {
 	Flags     int32
 	Peer      TL // InputPeer
 	Q         string
-	FromID    TL // InputUser // flag
-	Filter    TL // MessagesFilter
+	FromID    TL    // InputUser // flag
+	TopMsgID  int32 // flag
+	Filter    TL    // MessagesFilter
 	MinDate   int32
 	MaxDate   int32
 	OffsetID  int32
@@ -6896,8 +7084,10 @@ type MessagesReceivedMessages struct {
 }
 
 type MessagesSetTyping struct {
-	Peer   TL // InputPeer
-	Action TL // SendMessageAction
+	Flags    int32
+	Peer     TL    // InputPeer
+	TopMsgID int32 // flag
+	Action   TL    // SendMessageAction
 }
 
 type MessagesSendMessage struct {
@@ -6935,7 +7125,6 @@ type MessagesForwardMessages struct {
 	Silent       bool // flag
 	Background   bool // flag
 	WithMyScore  bool // flag
-	Grouped      bool // flag
 	FromPeer     TL   // InputPeer
 	ID           []int32
 	RandomID     []int64
@@ -7023,13 +7212,17 @@ type MessagesReadEncryptedHistory struct {
 }
 
 type MessagesSendEncrypted struct {
-	Peer     TL // InputEncryptedChat
+	Flags    int32
+	Silent   bool // flag
+	Peer     TL   // InputEncryptedChat
 	RandomID int64
 	Data     []byte
 }
 
 type MessagesSendEncryptedFile struct {
-	Peer     TL // InputEncryptedChat
+	Flags    int32
+	Silent   bool // flag
+	Peer     TL   // InputEncryptedChat
 	RandomID int64
 	Data     []byte
 	File     TL // InputEncryptedFile
@@ -7120,6 +7313,9 @@ type MessagesSearchGlobal struct {
 	Flags      int32
 	FolderID   int32 // flag
 	Q          string
+	Filter     TL // MessagesFilter
+	MinDate    int32
+	MaxDate    int32
 	OffsetRate int32
 	OffsetPeer TL // InputPeer
 	OffsetID   int32
@@ -7209,11 +7405,12 @@ type MessagesEditInlineBotMessage struct {
 }
 
 type MessagesGetBotCallbackAnswer struct {
-	Flags int32
-	Game  bool // flag
-	Peer  TL   // InputPeer
-	MsgID int32
-	Data  []byte // flag
+	Flags    int32
+	Game     bool // flag
+	Peer     TL   // InputPeer
+	MsgID    int32
+	Data     []byte // flag
+	Password TL     // InputCheckPasswordSRP // flag
 }
 
 type MessagesSetBotCallbackAnswer struct {
@@ -7573,6 +7770,29 @@ type MessagesGetOldFeaturedStickers struct {
 	Hash   int32
 }
 
+type MessagesGetReplies struct {
+	Peer       TL // InputPeer
+	MsgID      int32
+	OffsetID   int32
+	OffsetDate int32
+	AddOffset  int32
+	Limit      int32
+	MaxID      int32
+	MinID      int32
+	Hash       int32
+}
+
+type MessagesGetDiscussionMessage struct {
+	Peer  TL // InputPeer
+	MsgID int32
+}
+
+type MessagesReadDiscussion struct {
+	Peer      TL // InputPeer
+	MsgID     int32
+	ReadMaxID int32
+}
+
 type UpdatesGetState struct {
 }
 
@@ -7742,6 +7962,11 @@ type HelpDismissSuggestion struct {
 	Suggestion string
 }
 
+type HelpGetCountriesList struct {
+	LangCode string
+	Hash     int32
+}
+
 type ChannelsReadHistory struct {
 	Channel TL // InputChannel
 	MaxID   int32
@@ -7844,9 +8069,11 @@ type ChannelsDeleteChannel struct {
 }
 
 type ChannelsExportMessageLink struct {
-	Channel TL // InputChannel
+	Flags   int32
+	Grouped bool // flag
+	Thread  bool // flag
+	Channel TL   // InputChannel
 	ID      int32
-	Grouped TL // Bool
 }
 
 type ChannelsToggleSignatures struct {
@@ -8115,6 +8342,22 @@ type StatsGetMegagroupStats struct {
 	Flags   int32
 	Dark    bool // flag
 	Channel TL   // InputChannel
+}
+
+type StatsGetMessagePublicForwards struct {
+	Channel    TL // InputChannel
+	MsgID      int32
+	OffsetRate int32
+	OffsetPeer TL // InputPeer
+	OffsetID   int32
+	Limit      int32
+}
+
+type StatsGetMessageStats struct {
+	Flags   int32
+	Dark    bool // flag
+	Channel TL   // InputChannel
+	MsgID   int32
 }
 
 func (e ResPQ) encode() []byte {
@@ -8513,6 +8756,45 @@ func (e IpPort) encode() []byte {
 	x.UInt(crcIpPort)
 	x.Int(e.Ipv4)
 	x.Int(e.Port)
+	return x.buf
+}
+
+func (e IpPortSecret) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcIpPortSecret)
+	x.Int(e.Ipv4)
+	x.Int(e.Port)
+	x.StringBytes(e.Secret)
+	return x.buf
+}
+
+func (e AccessPointRule) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcAccessPointRule)
+	x.String(e.PhonePrefixRules)
+	x.Int(e.DcID)
+	x.Vector(e.Ips)
+	return x.buf
+}
+
+func (e HelpConfigSimple) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcHelpConfigSimple)
+	x.Int(e.Date)
+	x.Int(e.Expires)
+	x.Vector(e.Rules)
+	return x.buf
+}
+
+func (e TestUseError) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcTestUseError)
+	return x.buf
+}
+
+func (e TestUseConfigSimple) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcTestUseConfigSimple)
 	return x.buf
 }
 
@@ -9048,6 +9330,7 @@ func (e User) encode() []byte {
 	//flag e.BotInlineGeo
 	//flag e.Support
 	//flag e.Scam
+	//flag e.ApplyMinPhoto
 	x.Int(e.ID)
 	if e.Flags&1 != 0 {
 		x.Long(e.AccessHash)
@@ -9276,9 +9559,10 @@ func (e ChannelFull) encode() []byte {
 	//flag e.CanSetUsername
 	//flag e.CanSetStickers
 	//flag e.HiddenPrehistory
-	//flag e.CanViewStats
 	//flag e.CanSetLocation
 	//flag e.HasScheduled
+	//flag e.CanViewStats
+	//flag e.Blocked
 	x.Int(e.ID)
 	x.String(e.About)
 	if e.Flags&1 != 0 {
@@ -9423,9 +9707,9 @@ func (e Message) encode() []byte {
 	//flag e.EditHide
 	x.Int(e.ID)
 	if e.Flags&256 != 0 {
-		x.Int(e.FromID)
+		x.Bytes(e.FromID.encode())
 	}
-	x.Bytes(e.ToID.encode())
+	x.Bytes(e.PeerID.encode())
 	if e.Flags&4 != 0 {
 		x.Bytes(e.FwdFrom.encode())
 	}
@@ -9433,7 +9717,7 @@ func (e Message) encode() []byte {
 		x.Int(e.ViaBotID)
 	}
 	if e.Flags&8 != 0 {
-		x.Int(e.ReplyToMsgID)
+		x.Bytes(e.ReplyTo.encode())
 	}
 	x.Int(e.Date)
 	x.String(e.Message)
@@ -9448,6 +9732,12 @@ func (e Message) encode() []byte {
 	}
 	if e.Flags&1024 != 0 {
 		x.Int(e.Views)
+	}
+	if e.Flags&1024 != 0 {
+		x.Int(e.Forwards)
+	}
+	if e.Flags&8388608 != 0 {
+		x.Bytes(e.Replies.encode())
 	}
 	if e.Flags&32768 != 0 {
 		x.Int(e.EditDate)
@@ -9476,11 +9766,11 @@ func (e MessageService) encode() []byte {
 	//flag e.Legacy
 	x.Int(e.ID)
 	if e.Flags&256 != 0 {
-		x.Int(e.FromID)
+		x.Bytes(e.FromID.encode())
 	}
-	x.Bytes(e.ToID.encode())
+	x.Bytes(e.PeerID.encode())
 	if e.Flags&8 != 0 {
-		x.Int(e.ReplyToMsgID)
+		x.Bytes(e.ReplyTo.encode())
 	}
 	x.Int(e.Date)
 	x.Bytes(e.Action.encode())
@@ -9892,6 +10182,17 @@ func (e PhotoStrippedSize) encode() []byte {
 	return x.buf
 }
 
+func (e PhotoSizeProgressive) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcPhotoSizeProgressive)
+	x.String(e.Type)
+	x.Bytes(e.Location.encode())
+	x.Int(e.W)
+	x.Int(e.H)
+	x.VectorInt(e.Sizes)
+	return x.buf
+}
+
 func (e GeoPointEmpty) encode() []byte {
 	x := NewEncodeBuf(512)
 	x.UInt(crcGeoPointEmpty)
@@ -10113,6 +10414,7 @@ func (e UserFull) encode() []byte {
 	//flag e.PhoneCallsPrivate
 	//flag e.CanPinMessage
 	//flag e.HasScheduled
+	//flag e.VideoCallsAvailable
 	x.Bytes(e.User.encode())
 	if e.Flags&2 != 0 {
 		x.String(e.About)
@@ -10148,14 +10450,6 @@ func (e ImportedContact) encode() []byte {
 	x.UInt(crcImportedContact)
 	x.Int(e.UserID)
 	x.Long(e.ClientID)
-	return x.buf
-}
-
-func (e ContactBlocked) encode() []byte {
-	x := NewEncodeBuf(512)
-	x.UInt(crcContactBlocked)
-	x.Int(e.UserID)
-	x.Int(e.Date)
 	return x.buf
 }
 
@@ -10196,6 +10490,7 @@ func (e ContactsBlocked) encode() []byte {
 	x := NewEncodeBuf(512)
 	x.UInt(crcContactsBlocked)
 	x.Vector(e.Blocked)
+	x.Vector(e.Chats)
 	x.Vector(e.Users)
 	return x.buf
 }
@@ -10205,6 +10500,7 @@ func (e ContactsBlockedSlice) encode() []byte {
 	x.UInt(crcContactsBlockedSlice)
 	x.Int(e.Count)
 	x.Vector(e.Blocked)
+	x.Vector(e.Chats)
 	x.Vector(e.Users)
 	return x.buf
 }
@@ -10546,14 +10842,6 @@ func (e UpdateDcOptions) encode() []byte {
 	x := NewEncodeBuf(512)
 	x.UInt(crcUpdateDcOptions)
 	x.Vector(e.DcOptions)
-	return x.buf
-}
-
-func (e UpdateUserBlocked) encode() []byte {
-	x := NewEncodeBuf(512)
-	x.UInt(crcUpdateUserBlocked)
-	x.Int(e.UserID)
-	x.Bytes(e.Blocked.encode())
 	return x.buf
 }
 
@@ -11161,6 +11449,61 @@ func (e UpdateChannelParticipant) encode() []byte {
 	return x.buf
 }
 
+func (e UpdateChannelMessageForwards) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcUpdateChannelMessageForwards)
+	x.Int(e.ChannelID)
+	x.Int(e.ID)
+	x.Int(e.Forwards)
+	return x.buf
+}
+
+func (e UpdateReadChannelDiscussionInbox) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcUpdateReadChannelDiscussionInbox)
+	x.Int(e.Flags)
+	x.Int(e.ChannelID)
+	x.Int(e.TopMsgID)
+	x.Int(e.ReadMaxID)
+	if e.Flags&1 != 0 {
+		x.Int(e.BroadcastID)
+	}
+	if e.Flags&1 != 0 {
+		x.Int(e.BroadcastPost)
+	}
+	return x.buf
+}
+
+func (e UpdateReadChannelDiscussionOutbox) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcUpdateReadChannelDiscussionOutbox)
+	x.Int(e.ChannelID)
+	x.Int(e.TopMsgID)
+	x.Int(e.ReadMaxID)
+	return x.buf
+}
+
+func (e UpdatePeerBlocked) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcUpdatePeerBlocked)
+	x.Bytes(e.PeerID.encode())
+	x.Bytes(e.Blocked.encode())
+	return x.buf
+}
+
+func (e UpdateChannelUserTyping) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcUpdateChannelUserTyping)
+	x.Int(e.Flags)
+	x.Int(e.ChannelID)
+	if e.Flags&1 != 0 {
+		x.Int(e.TopMsgID)
+	}
+	x.Int(e.UserID)
+	x.Bytes(e.Action.encode())
+	return x.buf
+}
+
 func (e UpdatesState) encode() []byte {
 	x := NewEncodeBuf(512)
 	x.UInt(crcUpdatesState)
@@ -11238,7 +11581,7 @@ func (e UpdateShortMessage) encode() []byte {
 		x.Int(e.ViaBotID)
 	}
 	if e.Flags&8 != 0 {
-		x.Int(e.ReplyToMsgID)
+		x.Bytes(e.ReplyTo.encode())
 	}
 	if e.Flags&128 != 0 {
 		x.Vector(e.Entities)
@@ -11268,7 +11611,7 @@ func (e UpdateShortChatMessage) encode() []byte {
 		x.Int(e.ViaBotID)
 	}
 	if e.Flags&8 != 0 {
-		x.Int(e.ReplyToMsgID)
+		x.Bytes(e.ReplyTo.encode())
 	}
 	if e.Flags&128 != 0 {
 		x.Vector(e.Entities)
@@ -12502,6 +12845,8 @@ func (e KeyboardButtonUrl) encode() []byte {
 func (e KeyboardButtonCallback) encode() []byte {
 	x := NewEncodeBuf(512)
 	x.UInt(crcKeyboardButtonCallback)
+	x.Int(e.Flags)
+	//flag e.RequiresPassword
 	x.String(e.Text)
 	x.StringBytes(e.Data)
 	return x.buf
@@ -12901,6 +13246,7 @@ func (e ChannelParticipantCreator) encode() []byte {
 	x.UInt(crcChannelParticipantCreator)
 	x.Int(e.Flags)
 	x.Int(e.UserID)
+	x.Bytes(e.AdminRights.encode())
 	if e.Flags&1 != 0 {
 		x.String(e.Rank)
 	}
@@ -13326,15 +13672,12 @@ func (e MessageFwdHeader) encode() []byte {
 	x.UInt(crcMessageFwdHeader)
 	x.Int(e.Flags)
 	if e.Flags&1 != 0 {
-		x.Int(e.FromID)
+		x.Bytes(e.FromID.encode())
 	}
 	if e.Flags&32 != 0 {
 		x.String(e.FromName)
 	}
 	x.Int(e.Date)
-	if e.Flags&2 != 0 {
-		x.Int(e.ChannelID)
-	}
 	if e.Flags&4 != 0 {
 		x.Int(e.ChannelPost)
 	}
@@ -14459,6 +14802,7 @@ func (e PhoneCall) encode() []byte {
 	x.UInt(crcPhoneCall)
 	x.Int(e.Flags)
 	//flag e.P2pAllowed
+	//flag e.Video
 	x.Long(e.ID)
 	x.Long(e.AccessHash)
 	x.Int(e.Date)
@@ -14497,6 +14841,21 @@ func (e PhoneConnection) encode() []byte {
 	x.String(e.Ipv6)
 	x.Int(e.Port)
 	x.StringBytes(e.PeerTag)
+	return x.buf
+}
+
+func (e PhoneConnectionWebrtc) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcPhoneConnectionWebrtc)
+	x.Int(e.Flags)
+	//flag e.Turn
+	//flag e.Stun
+	x.Long(e.ID)
+	x.String(e.Ip)
+	x.String(e.Ipv6)
+	x.Int(e.Port)
+	x.String(e.Username)
+	x.String(e.Password)
 	return x.buf
 }
 
@@ -15739,6 +16098,7 @@ func (e ChatAdminRights) encode() []byte {
 	//flag e.InviteUsers
 	//flag e.PinMessages
 	//flag e.AddAdmins
+	//flag e.Anonymous
 	return x.buf
 }
 
@@ -16437,6 +16797,143 @@ func (e GlobalPrivacySettings) encode() []byte {
 	if e.Flags&1 != 0 {
 		x.Bytes(e.ArchiveAndMuteNewNoncontactPeers.encode())
 	}
+	return x.buf
+}
+
+func (e HelpCountryCode) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcHelpCountryCode)
+	x.Int(e.Flags)
+	x.String(e.CountryCode)
+	if e.Flags&1 != 0 {
+		x.VectorString(e.Prefixes)
+	}
+	if e.Flags&2 != 0 {
+		x.VectorString(e.Patterns)
+	}
+	return x.buf
+}
+
+func (e HelpCountry) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcHelpCountry)
+	x.Int(e.Flags)
+	//flag e.Hidden
+	x.String(e.Iso2)
+	x.String(e.DefaultName)
+	if e.Flags&2 != 0 {
+		x.String(e.Name)
+	}
+	x.Vector(e.CountryCodes)
+	return x.buf
+}
+
+func (e HelpCountriesListNotModified) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcHelpCountriesListNotModified)
+	return x.buf
+}
+
+func (e HelpCountriesList) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcHelpCountriesList)
+	x.Vector(e.Countries)
+	x.Int(e.Hash)
+	return x.buf
+}
+
+func (e MessageViews) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcMessageViews)
+	x.Int(e.Flags)
+	if e.Flags&1 != 0 {
+		x.Int(e.Views)
+	}
+	if e.Flags&2 != 0 {
+		x.Int(e.Forwards)
+	}
+	if e.Flags&4 != 0 {
+		x.Bytes(e.Replies.encode())
+	}
+	return x.buf
+}
+
+func (e MessagesMessageViews) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcMessagesMessageViews)
+	x.Vector(e.Views)
+	x.Vector(e.Chats)
+	x.Vector(e.Users)
+	return x.buf
+}
+
+func (e StatsMessageStats) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcStatsMessageStats)
+	x.Bytes(e.ViewsGraph.encode())
+	return x.buf
+}
+
+func (e MessagesDiscussionMessage) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcMessagesDiscussionMessage)
+	x.Int(e.Flags)
+	x.Vector(e.Messages)
+	if e.Flags&1 != 0 {
+		x.Int(e.MaxID)
+	}
+	if e.Flags&2 != 0 {
+		x.Int(e.ReadInboxMaxID)
+	}
+	if e.Flags&4 != 0 {
+		x.Int(e.ReadOutboxMaxID)
+	}
+	x.Vector(e.Chats)
+	x.Vector(e.Users)
+	return x.buf
+}
+
+func (e MessageReplyHeader) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcMessageReplyHeader)
+	x.Int(e.Flags)
+	x.Int(e.ReplyToMsgID)
+	if e.Flags&1 != 0 {
+		x.Bytes(e.ReplyToPeerID.encode())
+	}
+	if e.Flags&2 != 0 {
+		x.Int(e.ReplyToTopID)
+	}
+	return x.buf
+}
+
+func (e MessageReplies) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcMessageReplies)
+	x.Int(e.Flags)
+	//flag e.Comments
+	x.Int(e.Replies)
+	x.Int(e.RepliesPts)
+	if e.Flags&2 != 0 {
+		x.Vector(e.RecentRepliers)
+	}
+	if e.Flags&1 != 0 {
+		x.Int(e.ChannelID)
+	}
+	if e.Flags&4 != 0 {
+		x.Int(e.MaxID)
+	}
+	if e.Flags&8 != 0 {
+		x.Int(e.ReadMaxID)
+	}
+	return x.buf
+}
+
+func (e PeerBlocked) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcPeerBlocked)
+	x.Bytes(e.PeerID.encode())
+	x.Int(e.Date)
 	return x.buf
 }
 
@@ -17381,6 +17878,17 @@ func (e ContactsGetLocated) encode() []byte {
 	return x.buf
 }
 
+func (e ContactsBlockFromReplies) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcContactsBlockFromReplies)
+	x.Int(e.Flags)
+	//flag e.DeleteMessage
+	//flag e.DeleteHistory
+	//flag e.ReportSpam
+	x.Int(e.MsgID)
+	return x.buf
+}
+
 func (e MessagesGetMessages) encode() []byte {
 	x := NewEncodeBuf(512)
 	x.UInt(crcMessagesGetMessages)
@@ -17426,6 +17934,9 @@ func (e MessagesSearch) encode() []byte {
 	x.String(e.Q)
 	if e.Flags&1 != 0 {
 		x.Bytes(e.FromID.encode())
+	}
+	if e.Flags&2 != 0 {
+		x.Int(e.TopMsgID)
 	}
 	x.Bytes(e.Filter.encode())
 	x.Int(e.MinDate)
@@ -17477,7 +17988,11 @@ func (e MessagesReceivedMessages) encode() []byte {
 func (e MessagesSetTyping) encode() []byte {
 	x := NewEncodeBuf(512)
 	x.UInt(crcMessagesSetTyping)
+	x.Int(e.Flags)
 	x.Bytes(e.Peer.encode())
+	if e.Flags&1 != 0 {
+		x.Int(e.TopMsgID)
+	}
 	x.Bytes(e.Action.encode())
 	return x.buf
 }
@@ -17541,7 +18056,6 @@ func (e MessagesForwardMessages) encode() []byte {
 	//flag e.Silent
 	//flag e.Background
 	//flag e.WithMyScore
-	//flag e.Grouped
 	x.Bytes(e.FromPeer.encode())
 	x.VectorInt(e.ID)
 	x.VectorLong(e.RandomID)
@@ -17682,6 +18196,8 @@ func (e MessagesReadEncryptedHistory) encode() []byte {
 func (e MessagesSendEncrypted) encode() []byte {
 	x := NewEncodeBuf(512)
 	x.UInt(crcMessagesSendEncrypted)
+	x.Int(e.Flags)
+	//flag e.Silent
 	x.Bytes(e.Peer.encode())
 	x.Long(e.RandomID)
 	x.StringBytes(e.Data)
@@ -17691,6 +18207,8 @@ func (e MessagesSendEncrypted) encode() []byte {
 func (e MessagesSendEncryptedFile) encode() []byte {
 	x := NewEncodeBuf(512)
 	x.UInt(crcMessagesSendEncryptedFile)
+	x.Int(e.Flags)
+	//flag e.Silent
 	x.Bytes(e.Peer.encode())
 	x.Long(e.RandomID)
 	x.StringBytes(e.Data)
@@ -17840,6 +18358,9 @@ func (e MessagesSearchGlobal) encode() []byte {
 		x.Int(e.FolderID)
 	}
 	x.String(e.Q)
+	x.Bytes(e.Filter.encode())
+	x.Int(e.MinDate)
+	x.Int(e.MaxDate)
 	x.Int(e.OffsetRate)
 	x.Bytes(e.OffsetPeer.encode())
 	x.Int(e.OffsetID)
@@ -17996,6 +18517,9 @@ func (e MessagesGetBotCallbackAnswer) encode() []byte {
 	x.Int(e.MsgID)
 	if e.Flags&1 != 0 {
 		x.StringBytes(e.Data)
+	}
+	if e.Flags&4 != 0 {
+		x.Bytes(e.Password.encode())
 	}
 	return x.buf
 }
@@ -18573,6 +19097,38 @@ func (e MessagesGetOldFeaturedStickers) encode() []byte {
 	return x.buf
 }
 
+func (e MessagesGetReplies) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcMessagesGetReplies)
+	x.Bytes(e.Peer.encode())
+	x.Int(e.MsgID)
+	x.Int(e.OffsetID)
+	x.Int(e.OffsetDate)
+	x.Int(e.AddOffset)
+	x.Int(e.Limit)
+	x.Int(e.MaxID)
+	x.Int(e.MinID)
+	x.Int(e.Hash)
+	return x.buf
+}
+
+func (e MessagesGetDiscussionMessage) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcMessagesGetDiscussionMessage)
+	x.Bytes(e.Peer.encode())
+	x.Int(e.MsgID)
+	return x.buf
+}
+
+func (e MessagesReadDiscussion) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcMessagesReadDiscussion)
+	x.Bytes(e.Peer.encode())
+	x.Int(e.MsgID)
+	x.Int(e.ReadMaxID)
+	return x.buf
+}
+
 func (e UpdatesGetState) encode() []byte {
 	x := NewEncodeBuf(512)
 	x.UInt(crcUpdatesGetState)
@@ -18858,6 +19414,14 @@ func (e HelpDismissSuggestion) encode() []byte {
 	return x.buf
 }
 
+func (e HelpGetCountriesList) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcHelpGetCountriesList)
+	x.String(e.LangCode)
+	x.Int(e.Hash)
+	return x.buf
+}
+
 func (e ChannelsReadHistory) encode() []byte {
 	x := NewEncodeBuf(512)
 	x.UInt(crcChannelsReadHistory)
@@ -19023,9 +19587,11 @@ func (e ChannelsDeleteChannel) encode() []byte {
 func (e ChannelsExportMessageLink) encode() []byte {
 	x := NewEncodeBuf(512)
 	x.UInt(crcChannelsExportMessageLink)
+	x.Int(e.Flags)
+	//flag e.Grouped
+	//flag e.Thread
 	x.Bytes(e.Channel.encode())
 	x.Int(e.ID)
-	x.Bytes(e.Grouped.encode())
 	return x.buf
 }
 
@@ -19456,6 +20022,28 @@ func (e StatsGetMegagroupStats) encode() []byte {
 	return x.buf
 }
 
+func (e StatsGetMessagePublicForwards) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcStatsGetMessagePublicForwards)
+	x.Bytes(e.Channel.encode())
+	x.Int(e.MsgID)
+	x.Int(e.OffsetRate)
+	x.Bytes(e.OffsetPeer.encode())
+	x.Int(e.OffsetID)
+	x.Int(e.Limit)
+	return x.buf
+}
+
+func (e StatsGetMessageStats) encode() []byte {
+	x := NewEncodeBuf(512)
+	x.UInt(crcStatsGetMessageStats)
+	x.Int(e.Flags)
+	//flag e.Dark
+	x.Bytes(e.Channel.encode())
+	x.Int(e.MsgID)
+	return x.buf
+}
+
 func (e ReqPqMulti) decodeResponse(dbuf *DecodeBuf) TL {
 	return dbuf.Object()
 }
@@ -19513,6 +20101,26 @@ func (e Error) decodeResponse(dbuf *DecodeBuf) TL {
 }
 
 func (e IpPort) decodeResponse(dbuf *DecodeBuf) TL {
+	return dbuf.Object()
+}
+
+func (e IpPortSecret) decodeResponse(dbuf *DecodeBuf) TL {
+	return dbuf.Object()
+}
+
+func (e AccessPointRule) decodeResponse(dbuf *DecodeBuf) TL {
+	return dbuf.Object()
+}
+
+func (e HelpConfigSimple) decodeResponse(dbuf *DecodeBuf) TL {
+	return dbuf.Object()
+}
+
+func (e TestUseError) decodeResponse(dbuf *DecodeBuf) TL {
+	return dbuf.Object()
+}
+
+func (e TestUseConfigSimple) decodeResponse(dbuf *DecodeBuf) TL {
 	return dbuf.Object()
 }
 
@@ -19972,6 +20580,10 @@ func (e ContactsGetLocated) decodeResponse(dbuf *DecodeBuf) TL {
 	return dbuf.Object()
 }
 
+func (e ContactsBlockFromReplies) decodeResponse(dbuf *DecodeBuf) TL {
+	return dbuf.Object()
+}
+
 func (e MessagesGetMessages) decodeResponse(dbuf *DecodeBuf) TL {
 	return dbuf.Object()
 }
@@ -20149,7 +20761,7 @@ func (e MessagesStartBot) decodeResponse(dbuf *DecodeBuf) TL {
 }
 
 func (e MessagesGetMessagesViews) decodeResponse(dbuf *DecodeBuf) TL {
-	return VectorInt(dbuf.VectorInt())
+	return dbuf.Object()
 }
 
 func (e MessagesEditChatAdmin) decodeResponse(dbuf *DecodeBuf) TL {
@@ -20464,6 +21076,18 @@ func (e MessagesGetOldFeaturedStickers) decodeResponse(dbuf *DecodeBuf) TL {
 	return dbuf.Object()
 }
 
+func (e MessagesGetReplies) decodeResponse(dbuf *DecodeBuf) TL {
+	return dbuf.Object()
+}
+
+func (e MessagesGetDiscussionMessage) decodeResponse(dbuf *DecodeBuf) TL {
+	return dbuf.Object()
+}
+
+func (e MessagesReadDiscussion) decodeResponse(dbuf *DecodeBuf) TL {
+	return dbuf.Object()
+}
+
 func (e UpdatesGetState) decodeResponse(dbuf *DecodeBuf) TL {
 	return dbuf.Object()
 }
@@ -20605,6 +21229,10 @@ func (e HelpHidePromoData) decodeResponse(dbuf *DecodeBuf) TL {
 }
 
 func (e HelpDismissSuggestion) decodeResponse(dbuf *DecodeBuf) TL {
+	return dbuf.Object()
+}
+
+func (e HelpGetCountriesList) decodeResponse(dbuf *DecodeBuf) TL {
 	return dbuf.Object()
 }
 
@@ -20881,6 +21509,14 @@ func (e StatsLoadAsyncGraph) decodeResponse(dbuf *DecodeBuf) TL {
 }
 
 func (e StatsGetMegagroupStats) decodeResponse(dbuf *DecodeBuf) TL {
+	return dbuf.Object()
+}
+
+func (e StatsGetMessagePublicForwards) decodeResponse(dbuf *DecodeBuf) TL {
+	return dbuf.Object()
+}
+
+func (e StatsGetMessageStats) decodeResponse(dbuf *DecodeBuf) TL {
 	return dbuf.Object()
 }
 
@@ -21185,6 +21821,33 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 			m.Int(),
 			m.Int(),
 		}
+
+	case crcIpPortSecret:
+		r = IpPortSecret{
+			m.Int(),
+			m.Int(),
+			m.StringBytes(),
+		}
+
+	case crcAccessPointRule:
+		r = AccessPointRule{
+			m.String(),
+			m.Int(),
+			m.Vector(),
+		}
+
+	case crcHelpConfigSimple:
+		r = HelpConfigSimple{
+			m.Int(),
+			m.Int(),
+			m.Vector(),
+		}
+
+	case crcTestUseError:
+		r = TestUseError{}
+
+	case crcTestUseConfigSimple:
+		r = TestUseConfigSimple{}
 
 	case crcInputPeerEmpty:
 		r = InputPeerEmpty{}
@@ -21558,6 +22221,7 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 			flags&2097152 != 0,  //flag #21
 			flags&8388608 != 0,  //flag #23
 			flags&16777216 != 0, //flag #24
+			flags&33554432 != 0, //flag #25
 			m.Int(),
 			m.FlaggedLong(flags, 0),
 			m.FlaggedString(flags, 1),
@@ -21701,13 +22365,14 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 		var flags int32
 		r = ChannelFull{
 			readFlags(m, &flags),
-			flags&8 != 0,      //flag #3
-			flags&64 != 0,     //flag #6
-			flags&128 != 0,    //flag #7
-			flags&1024 != 0,   //flag #10
-			flags&4096 != 0,   //flag #12
-			flags&65536 != 0,  //flag #16
-			flags&524288 != 0, //flag #19
+			flags&8 != 0,       //flag #3
+			flags&64 != 0,      //flag #6
+			flags&128 != 0,     //flag #7
+			flags&1024 != 0,    //flag #10
+			flags&65536 != 0,   //flag #16
+			flags&524288 != 0,  //flag #19
+			flags&1048576 != 0, //flag #20
+			flags&4194304 != 0, //flag #22
 			m.Int(),
 			m.String(),
 			m.FlaggedInt(flags, 0),
@@ -21801,17 +22466,19 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 			flags&524288 != 0,  //flag #19
 			flags&2097152 != 0, //flag #21
 			m.Int(),
-			m.FlaggedInt(flags, 8),
+			m.FlaggedObject(flags, 8),
 			m.Object(),
 			m.FlaggedObject(flags, 2),
 			m.FlaggedInt(flags, 11),
-			m.FlaggedInt(flags, 3),
+			m.FlaggedObject(flags, 3),
 			m.Int(),
 			m.String(),
 			m.FlaggedObject(flags, 9),
 			m.FlaggedObject(flags, 6),
 			m.FlaggedVector(flags, 7),
 			m.FlaggedInt(flags, 10),
+			m.FlaggedInt(flags, 10),
+			m.FlaggedObject(flags, 23),
 			m.FlaggedInt(flags, 15),
 			m.FlaggedString(flags, 16),
 			m.FlaggedLong(flags, 17),
@@ -21829,9 +22496,9 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 			flags&16384 != 0,  //flag #14
 			flags&524288 != 0, //flag #19
 			m.Int(),
-			m.FlaggedInt(flags, 8),
+			m.FlaggedObject(flags, 8),
 			m.Object(),
-			m.FlaggedInt(flags, 3),
+			m.FlaggedObject(flags, 3),
 			m.Int(),
 			m.Object(),
 		}
@@ -22125,6 +22792,15 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 			m.StringBytes(),
 		}
 
+	case crcPhotoSizeProgressive:
+		r = PhotoSizeProgressive{
+			m.String(),
+			m.Object(),
+			m.Int(),
+			m.Int(),
+			m.VectorInt(),
+		}
+
 	case crcGeoPointEmpty:
 		r = GeoPointEmpty{}
 
@@ -22270,6 +22946,7 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 			flags&32 != 0,   //flag #5
 			flags&128 != 0,  //flag #7
 			flags&4096 != 0, //flag #12
+			flags&8192 != 0, //flag #13
 			m.Object(),
 			m.FlaggedString(flags, 1),
 			m.Object(),
@@ -22291,12 +22968,6 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 		r = ImportedContact{
 			m.Int(),
 			m.Long(),
-		}
-
-	case crcContactBlocked:
-		r = ContactBlocked{
-			m.Int(),
-			m.Int(),
 		}
 
 	case crcContactStatus:
@@ -22327,11 +22998,13 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 		r = ContactsBlocked{
 			m.Vector(),
 			m.Vector(),
+			m.Vector(),
 		}
 
 	case crcContactsBlockedSlice:
 		r = ContactsBlockedSlice{
 			m.Int(),
+			m.Vector(),
 			m.Vector(),
 			m.Vector(),
 		}
@@ -22574,12 +23247,6 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 	case crcUpdateDcOptions:
 		r = UpdateDcOptions{
 			m.Vector(),
-		}
-
-	case crcUpdateUserBlocked:
-		r = UpdateUserBlocked{
-			m.Int(),
-			m.Object(),
 		}
 
 	case crcUpdateNotifySettings:
@@ -23022,6 +23689,47 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 			m.Int(),
 		}
 
+	case crcUpdateChannelMessageForwards:
+		r = UpdateChannelMessageForwards{
+			m.Int(),
+			m.Int(),
+			m.Int(),
+		}
+
+	case crcUpdateReadChannelDiscussionInbox:
+		var flags int32
+		r = UpdateReadChannelDiscussionInbox{
+			readFlags(m, &flags),
+			m.Int(),
+			m.Int(),
+			m.Int(),
+			m.FlaggedInt(flags, 0),
+			m.FlaggedInt(flags, 0),
+		}
+
+	case crcUpdateReadChannelDiscussionOutbox:
+		r = UpdateReadChannelDiscussionOutbox{
+			m.Int(),
+			m.Int(),
+			m.Int(),
+		}
+
+	case crcUpdatePeerBlocked:
+		r = UpdatePeerBlocked{
+			m.Object(),
+			m.Object(),
+		}
+
+	case crcUpdateChannelUserTyping:
+		var flags int32
+		r = UpdateChannelUserTyping{
+			readFlags(m, &flags),
+			m.Int(),
+			m.FlaggedInt(flags, 0),
+			m.Int(),
+			m.Object(),
+		}
+
 	case crcUpdatesState:
 		r = UpdatesState{
 			m.Int(),
@@ -23081,7 +23789,7 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 			m.Int(),
 			m.FlaggedObject(flags, 2),
 			m.FlaggedInt(flags, 11),
-			m.FlaggedInt(flags, 3),
+			m.FlaggedObject(flags, 3),
 			m.FlaggedVector(flags, 7),
 		}
 
@@ -23102,7 +23810,7 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 			m.Int(),
 			m.FlaggedObject(flags, 2),
 			m.FlaggedInt(flags, 11),
-			m.FlaggedInt(flags, 3),
+			m.FlaggedObject(flags, 3),
 			m.FlaggedVector(flags, 7),
 		}
 
@@ -23937,7 +24645,10 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 		}
 
 	case crcKeyboardButtonCallback:
+		var flags int32
 		r = KeyboardButtonCallback{
+			readFlags(m, &flags),
+			flags&1 != 0, //flag #0
 			m.String(),
 			m.StringBytes(),
 		}
@@ -24245,6 +24956,7 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 		r = ChannelParticipantCreator{
 			readFlags(m, &flags),
 			m.Int(),
+			m.Object(),
 			m.FlaggedString(flags, 0),
 		}
 
@@ -24540,10 +25252,9 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 		var flags int32
 		r = MessageFwdHeader{
 			readFlags(m, &flags),
-			m.FlaggedInt(flags, 0),
+			m.FlaggedObject(flags, 0),
 			m.FlaggedString(flags, 5),
 			m.Int(),
-			m.FlaggedInt(flags, 1),
 			m.FlaggedInt(flags, 2),
 			m.FlaggedString(flags, 3),
 			m.FlaggedObject(flags, 4),
@@ -25309,7 +26020,7 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 		var flags int32
 		r = PhoneCallWaiting{
 			readFlags(m, &flags),
-			flags&32 != 0, //flag #5
+			flags&64 != 0, //flag #6
 			m.Long(),
 			m.Long(),
 			m.Int(),
@@ -25323,7 +26034,7 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 		var flags int32
 		r = PhoneCallRequested{
 			readFlags(m, &flags),
-			flags&32 != 0, //flag #5
+			flags&64 != 0, //flag #6
 			m.Long(),
 			m.Long(),
 			m.Int(),
@@ -25337,7 +26048,7 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 		var flags int32
 		r = PhoneCallAccepted{
 			readFlags(m, &flags),
-			flags&32 != 0, //flag #5
+			flags&64 != 0, //flag #6
 			m.Long(),
 			m.Long(),
 			m.Int(),
@@ -25352,6 +26063,7 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 		r = PhoneCall{
 			readFlags(m, &flags),
 			flags&32 != 0, //flag #5
+			flags&64 != 0, //flag #6
 			m.Long(),
 			m.Long(),
 			m.Int(),
@@ -25370,7 +26082,7 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 			readFlags(m, &flags),
 			flags&4 != 0,  //flag #2
 			flags&8 != 0,  //flag #3
-			flags&32 != 0, //flag #5
+			flags&64 != 0, //flag #6
 			m.Long(),
 			m.FlaggedObject(flags, 0),
 			m.FlaggedInt(flags, 1),
@@ -25383,6 +26095,20 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 			m.String(),
 			m.Int(),
 			m.StringBytes(),
+		}
+
+	case crcPhoneConnectionWebrtc:
+		var flags int32
+		r = PhoneConnectionWebrtc{
+			readFlags(m, &flags),
+			flags&1 != 0, //flag #0
+			flags&2 != 0, //flag #1
+			m.Long(),
+			m.String(),
+			m.String(),
+			m.Int(),
+			m.String(),
+			m.String(),
 		}
 
 	case crcPhoneCallProtocol:
@@ -26254,14 +26980,15 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 		var flags int32
 		r = ChatAdminRights{
 			readFlags(m, &flags),
-			flags&1 != 0,   //flag #0
-			flags&2 != 0,   //flag #1
-			flags&4 != 0,   //flag #2
-			flags&8 != 0,   //flag #3
-			flags&16 != 0,  //flag #4
-			flags&32 != 0,  //flag #5
-			flags&128 != 0, //flag #7
-			flags&512 != 0, //flag #9
+			flags&1 != 0,    //flag #0
+			flags&2 != 0,    //flag #1
+			flags&4 != 0,    //flag #2
+			flags&8 != 0,    //flag #3
+			flags&16 != 0,   //flag #4
+			flags&32 != 0,   //flag #5
+			flags&128 != 0,  //flag #7
+			flags&512 != 0,  //flag #9
+			flags&1024 != 0, //flag #10
 		}
 
 	case crcChatBannedRights:
@@ -26782,6 +27509,96 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 		r = GlobalPrivacySettings{
 			readFlags(m, &flags),
 			m.FlaggedObject(flags, 0),
+		}
+
+	case crcHelpCountryCode:
+		var flags int32
+		r = HelpCountryCode{
+			readFlags(m, &flags),
+			m.String(),
+			m.FlaggedVectorString(flags, 0),
+			m.FlaggedVectorString(flags, 1),
+		}
+
+	case crcHelpCountry:
+		var flags int32
+		r = HelpCountry{
+			readFlags(m, &flags),
+			flags&1 != 0, //flag #0
+			m.String(),
+			m.String(),
+			m.FlaggedString(flags, 1),
+			m.Vector(),
+		}
+
+	case crcHelpCountriesListNotModified:
+		r = HelpCountriesListNotModified{}
+
+	case crcHelpCountriesList:
+		r = HelpCountriesList{
+			m.Vector(),
+			m.Int(),
+		}
+
+	case crcMessageViews:
+		var flags int32
+		r = MessageViews{
+			readFlags(m, &flags),
+			m.FlaggedInt(flags, 0),
+			m.FlaggedInt(flags, 1),
+			m.FlaggedObject(flags, 2),
+		}
+
+	case crcMessagesMessageViews:
+		r = MessagesMessageViews{
+			m.Vector(),
+			m.Vector(),
+			m.Vector(),
+		}
+
+	case crcStatsMessageStats:
+		r = StatsMessageStats{
+			m.Object(),
+		}
+
+	case crcMessagesDiscussionMessage:
+		var flags int32
+		r = MessagesDiscussionMessage{
+			readFlags(m, &flags),
+			m.Vector(),
+			m.FlaggedInt(flags, 0),
+			m.FlaggedInt(flags, 1),
+			m.FlaggedInt(flags, 2),
+			m.Vector(),
+			m.Vector(),
+		}
+
+	case crcMessageReplyHeader:
+		var flags int32
+		r = MessageReplyHeader{
+			readFlags(m, &flags),
+			m.Int(),
+			m.FlaggedObject(flags, 0),
+			m.FlaggedInt(flags, 1),
+		}
+
+	case crcMessageReplies:
+		var flags int32
+		r = MessageReplies{
+			readFlags(m, &flags),
+			flags&1 != 0, //flag #0
+			m.Int(),
+			m.Int(),
+			m.FlaggedVector(flags, 1),
+			m.FlaggedInt(flags, 0),
+			m.FlaggedInt(flags, 2),
+			m.FlaggedInt(flags, 3),
+		}
+
+	case crcPeerBlocked:
+		r = PeerBlocked{
+			m.Object(),
+			m.Int(),
 		}
 
 	case crcInvokeAfterMsg:
@@ -27458,6 +28275,16 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 			m.FlaggedInt(flags, 0),
 		}
 
+	case crcContactsBlockFromReplies:
+		var flags int32
+		r = ContactsBlockFromReplies{
+			readFlags(m, &flags),
+			flags&1 != 0, //flag #0
+			flags&2 != 0, //flag #1
+			flags&4 != 0, //flag #2
+			m.Int(),
+		}
+
 	case crcMessagesGetMessages:
 		r = MessagesGetMessages{
 			m.Vector(),
@@ -27495,6 +28322,7 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 			m.Object(),
 			m.String(),
 			m.FlaggedObject(flags, 0),
+			m.FlaggedInt(flags, 1),
 			m.Object(),
 			m.Int(),
 			m.Int(),
@@ -27536,8 +28364,11 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 		}
 
 	case crcMessagesSetTyping:
+		var flags int32
 		r = MessagesSetTyping{
+			readFlags(m, &flags),
 			m.Object(),
+			m.FlaggedInt(flags, 0),
 			m.Object(),
 		}
 
@@ -27582,7 +28413,6 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 			flags&32 != 0,  //flag #5
 			flags&64 != 0,  //flag #6
 			flags&256 != 0, //flag #8
-			flags&512 != 0, //flag #9
 			m.Object(),
 			m.VectorInt(),
 			m.VectorLong(),
@@ -27686,14 +28516,20 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 		}
 
 	case crcMessagesSendEncrypted:
+		var flags int32
 		r = MessagesSendEncrypted{
+			readFlags(m, &flags),
+			flags&1 != 0, //flag #0
 			m.Object(),
 			m.Long(),
 			m.StringBytes(),
 		}
 
 	case crcMessagesSendEncryptedFile:
+		var flags int32
 		r = MessagesSendEncryptedFile{
+			readFlags(m, &flags),
+			flags&1 != 0, //flag #0
 			m.Object(),
 			m.Long(),
 			m.StringBytes(),
@@ -27805,6 +28641,9 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 			readFlags(m, &flags),
 			m.FlaggedInt(flags, 0),
 			m.String(),
+			m.Object(),
+			m.Int(),
+			m.Int(),
 			m.Int(),
 			m.Object(),
 			m.Int(),
@@ -27917,6 +28756,7 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 			m.Object(),
 			m.Int(),
 			m.FlaggedStringBytes(flags, 0),
+			m.FlaggedObject(flags, 2),
 		}
 
 	case crcMessagesSetBotCallbackAnswer:
@@ -28355,6 +29195,32 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 			m.Int(),
 		}
 
+	case crcMessagesGetReplies:
+		r = MessagesGetReplies{
+			m.Object(),
+			m.Int(),
+			m.Int(),
+			m.Int(),
+			m.Int(),
+			m.Int(),
+			m.Int(),
+			m.Int(),
+			m.Int(),
+		}
+
+	case crcMessagesGetDiscussionMessage:
+		r = MessagesGetDiscussionMessage{
+			m.Object(),
+			m.Int(),
+		}
+
+	case crcMessagesReadDiscussion:
+		r = MessagesReadDiscussion{
+			m.Object(),
+			m.Int(),
+			m.Int(),
+		}
+
 	case crcUpdatesGetState:
 		r = UpdatesGetState{}
 
@@ -28554,6 +29420,12 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 			m.String(),
 		}
 
+	case crcHelpGetCountriesList:
+		r = HelpGetCountriesList{
+			m.String(),
+			m.Int(),
+		}
+
 	case crcChannelsReadHistory:
 		r = ChannelsReadHistory{
 			m.Object(),
@@ -28676,10 +29548,13 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 		}
 
 	case crcChannelsExportMessageLink:
+		var flags int32
 		r = ChannelsExportMessageLink{
+			readFlags(m, &flags),
+			flags&1 != 0, //flag #0
+			flags&2 != 0, //flag #1
 			m.Object(),
 			m.Int(),
-			m.Object(),
 		}
 
 	case crcChannelsToggleSignatures:
@@ -29007,8 +29882,27 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 			m.Object(),
 		}
 
+	case crcStatsGetMessagePublicForwards:
+		r = StatsGetMessagePublicForwards{
+			m.Object(),
+			m.Int(),
+			m.Int(),
+			m.Object(),
+			m.Int(),
+			m.Int(),
+		}
+
+	case crcStatsGetMessageStats:
+		var flags int32
+		r = StatsGetMessageStats{
+			readFlags(m, &flags),
+			flags&1 != 0, //flag #0
+			m.Object(),
+			m.Int(),
+		}
+
 	default:
-		m.err = merry.Errorf("Unknown constructor: \u002508x", constructor)
+		m.err = fmt.Errorf("Unknown constructor: \u002508x", constructor)
 		return nil
 
 	}

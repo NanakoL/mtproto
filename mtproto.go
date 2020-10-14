@@ -1,10 +1,10 @@
 package mtproto
 
 import (
-	cryptoRand "crypto/rand"
+	"crypto/rand"
 	"fmt"
-	"github.com/ansel1/merry"
-	"math/rand"
+	"github.com/sirupsen/logrus"
+	"math/big"
 	"net"
 	"runtime"
 	"sync"
@@ -14,12 +14,12 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
-//go:generate go run schema/tl_generate.go 116 < schema/tl-schema-116.tl > tl_schema.go
+//go:generate go run schema/tl_generate.go 119 < schema/tl-schema-119.tl > tl_schema.go
 //go:generate gofmt -w tl_schema.go
 
 const RoutinesCount = 4
 
-var log = new(Logger)
+var log = &Logger{logrus.StandardLogger()}
 
 type AppConfig struct {
 	AppID          int32
@@ -33,6 +33,10 @@ type AppConfig struct {
 }
 
 type MTProto struct {
+	lastReConnect time.Time
+	reConnectMinInterval time.Duration
+	reConnectMaxInterval time.Duration
+	idleLimit  time.Duration
 	useIPv6    bool
 	session    *Session
 	appCfg     *AppConfig
@@ -104,6 +108,9 @@ func NewMTProto(cfg *AppConfig) *MTProto {
 	}
 
 	m := &MTProto{
+		reConnectMinInterval: time.Second,
+		reConnectMaxInterval: time.Minute,
+		idleLimit:  time.Hour,
 		useIPv6:    false,
 		session:    nil,
 		connDialer: &net.Dialer{},
@@ -128,6 +135,22 @@ func (m *MTProto) SetSession(s *Session) {
 	m.session = s
 }
 
+func (m *MTProto) SetLogger(s *logrus.Logger) {
+	log = &Logger{s}
+}
+
+func (m *MTProto) SetMaxInterval(s time.Duration) {
+	m.reConnectMaxInterval = s
+}
+
+func (m *MTProto) SetMinInterval(s time.Duration) {
+	m.reConnectMinInterval = s
+}
+
+func (m *MTProto) SetIdleLimit(s time.Duration) {
+	m.idleLimit = s
+}
+
 func (m *MTProto) UseIPv6(b bool) {
 	m.useIPv6 = b
 }
@@ -138,10 +161,10 @@ func (m *MTProto) SetDialer(d proxy.Dialer) {
 
 func (m *MTProto) InitSessAndConnect() error {
 	if err := m.InitSession(true); err != nil {
-		return merry.Wrap(err)
+		return err
 	}
 	if err := m.Connect(); err != nil {
-		return merry.Wrap(err)
+		return err
 	}
 	return nil
 }
@@ -159,9 +182,20 @@ func (m *MTProto) InitSession(isReady bool) error {
 		}
 	}
 
-	rand.Seed(time.Now().UnixNano())
-	m.session.sessionId = rand.Int63()
+	//rand.Seed(time.Now().UnixNano())
+	m.session.sessionId = randInt63()
 	return nil
+}
+
+func randInt63() int64 {
+	for {
+		n, err := rand.Int(rand.Reader, big.NewInt(1<<63-1))
+		if err != nil {
+			log.Warn(err.Error())
+			continue
+		}
+		return n.Int64()
+	}
 }
 
 func (m *MTProto) CopySession() *Session {
@@ -217,21 +251,22 @@ func (m *MTProto) initConfig() error {
 }
 
 func (m *MTProto) initConnection() error {
+	m.lastReConnect = time.Now()
 	log.Info("connecting to DC %d (%s)...", m.session.DcID, m.session.Addr)
 	var err error
 	m.conn, err = m.connDialer.Dial("tcp", m.session.Addr)
 	if err != nil {
-		return merry.Wrap(err)
+		return err
 	}
 	_, err = m.conn.Write([]byte{0xef})
 	if err != nil {
-		return merry.Wrap(err)
+		return err
 	}
 
 	// getting new authKey if need
 	if !m.encryptionReady {
 		if err = m.makeAuthKey(); err != nil {
-			return merry.Wrap(err)
+			return err
 		}
 		m.encryptionReady = true
 	}
@@ -286,14 +321,23 @@ func (m *MTProto) reconnectLogged() {
 	}
 	defer func() { m.reconnSemaphore.Release(1) }()
 
+	coolDown := time.Second
+	if time.Now().Before(m.lastReConnect.Add(m.reConnectMinInterval)) {
+		log.Warn("reconnect attempt too fast")
+		time.Sleep(m.reConnectMinInterval)
+	}
 	for {
+		m.lastReConnect = time.Now()
 		err := m.reconnect(0)
 		if err == nil {
 			return
 		}
 		log.Error(err, "failed to reconnect")
-		log.Info("retrying in 5 seconds")
-		time.Sleep(5 * time.Second)
+		log.Info("retrying in %d seconds", coolDown.Seconds())
+		time.Sleep(coolDown)
+		if coolDown.Milliseconds()*2 < m.reConnectMaxInterval.Milliseconds() {
+			coolDown = coolDown*2
+		}
 		// and trying to reconnect again
 	}
 }
@@ -314,7 +358,7 @@ func (m *MTProto) reconnect(newDcID int32) error {
 	// closing connection, readRoutine will then fail to read() and will handle stop signal
 	if m.conn != nil {
 		if err := m.conn.Close(); err != nil && !IsClosedConnErr(err) {
-			return merry.Wrap(err)
+			return err
 		}
 	}
 
@@ -351,14 +395,14 @@ func (m *MTProto) reconnect(newDcID int32) error {
 		}
 		newDcAddr, ok := m.DCAddr(newDcID)
 		if !ok {
-			return merry.Errorf("wrong DC number: %d", newDcID)
+			return fmt.Errorf("wrong DC number: %d", newDcID)
 		}
 		m.session.DcID = newDcID
 		m.session.Addr = newDcAddr
 	}
 
 	if err := m.Connect(); err != nil {
-		return merry.Wrap(err)
+		return err
 	}
 
 	// Checking pending messages.
@@ -392,7 +436,7 @@ func (m *MTProto) NewConnection(dcID int32) (*MTProto, error) {
 	session.DcID = dcID
 	var ok bool
 	if session.Addr, ok = m.DCAddr(dcID); !ok {
-		return nil, merry.Errorf("unable find address for DC #%d", dcID)
+		return nil, fmt.Errorf("unable find address for DC #%d", dcID)
 	}
 
 	newMT := NewMTProto(m.appCfg)
@@ -400,21 +444,21 @@ func (m *MTProto) NewConnection(dcID int32) (*MTProto, error) {
 	newMT.SetSession(session)
 
 	if err := newMT.InitSession(encrIsReady); err != nil {
-		return nil, merry.Wrap(err)
+		return nil, err
 	}
 	if err := newMT.Connect(); err != nil {
-		return nil, merry.Wrap(err)
+		return nil, err
 	}
 
 	if !isOnSameDC {
 		res := m.SendSync(AuthExportAuthorization{DcID: dcID})
 		exported, ok := res.(AuthExportedAuthorization)
 		if !ok {
-			return nil, merry.New(UnexpectedTL("auth export", res))
+			return nil, fmt.Errorf(UnexpectedTL("auth export", res))
 		}
 		res = newMT.SendSync(AuthImportAuthorization{ID: exported.ID, Bytes: exported.Bytes})
 		if _, ok := res.(AuthAuthorization); !ok {
-			return nil, merry.New(UnexpectedTL("auth import", res))
+			return nil, fmt.Errorf(UnexpectedTL("auth import", res))
 		}
 	}
 	return newMT, nil
@@ -496,7 +540,7 @@ func (ap BaseAuth) Password() (string, error) {
 func (m *MTProto) Auth(authData AuthDataProvider) error {
 	phonenumber, err := authData.PhoneNumber()
 	if err != nil {
-		return merry.Wrap(err)
+		return err
 	}
 
 	var authSentCode AuthSentCode
@@ -522,12 +566,12 @@ func (m *MTProto) Auth(authData AuthDataProvider) error {
 			if n != 1 {
 				n, _ := fmt.Sscanf(x.ErrorMessage, "NETWORK_MIGRATE_%d", &newDc)
 				if n != 1 {
-					return merry.Errorf("RPC error_string: %s", x.ErrorMessage)
+					return fmt.Errorf("RPC error_string: %s", x.ErrorMessage)
 				}
 			}
 
 			if err := m.reconnect(newDc); err != nil {
-				return merry.Wrap(err)
+				return err
 			}
 		default:
 			return WrongRespError(x)
@@ -536,7 +580,7 @@ func (m *MTProto) Auth(authData AuthDataProvider) error {
 
 	code, err := authData.Code()
 	if err != nil {
-		return merry.Wrap(err)
+		return err
 	}
 
 	//if authSentCode.Phone_registered
@@ -550,17 +594,17 @@ func (m *MTProto) Auth(authData AuthDataProvider) error {
 
 		passwd, err := authData.Password()
 		if err != nil {
-			return merry.Wrap(err)
+			return err
 		}
 
 		algo, ok := accPasswd.CurrentAlgo.(PasswordKdfAlgoSHA256SHA256PBKDF2HMACSHA512iter100000SHA256ModPow)
 		if !ok {
-			return merry.Errorf("unknown password algo %T, application update is maybe needed to log in",
+			return fmt.Errorf("unknown password algo %T, application update is maybe needed to log in",
 				accPasswd.CurrentAlgo)
 		}
-		passwdSRP, err := calcInputCheckPasswordSRP(algo, accPasswd, passwd, cryptoRand.Read, log.Debug)
+		passwdSRP, err := calcInputCheckPasswordSRP(algo, accPasswd, passwd, rand.Read, log.Debug)
 		if err != nil {
-			return merry.Wrap(err)
+			return err
 		}
 		x = m.SendSync(AuthCheckPassword{passwdSRP.(InputCheckPasswordSRP)})
 		if _, ok := x.(RpcError); ok {
@@ -569,7 +613,7 @@ func (m *MTProto) Auth(authData AuthDataProvider) error {
 	}
 	auth, ok := x.(AuthAuthorization)
 	if !ok {
-		return merry.Errorf("RPC: %#v", x)
+		return fmt.Errorf("RPC: %#v", x)
 	}
 	userSelf := auth.User.(User)
 	fmt.Printf("Signed in: id %d name <%s %s>\n", userSelf.ID, userSelf.FirstName, userSelf.LastName)
@@ -600,12 +644,12 @@ func (m *MTProto) AuthBot(token string) error {
 			if n != 1 {
 				n, _ := fmt.Sscanf(x.ErrorMessage, "NETWORK_MIGRATE_%d", &newDc)
 				if n != 1 {
-					return merry.Errorf("RPC error_string: %s", x.ErrorMessage)
+					return fmt.Errorf("RPC error_string: %s", x.ErrorMessage)
 				}
 			}
 
 			if err := m.reconnect(newDc); err != nil {
-				return merry.Wrap(err)
+				return err
 			}
 		default:
 			return WrongRespError(x)
@@ -655,7 +699,7 @@ func (m *MTProto) GetContacts() error {
 	x := m.SendSync(ContactsGetContacts{0})
 	list, ok := x.(ContactsContacts)
 	if !ok {
-		return merry.Errorf("RPC: %#v", x)
+		return fmt.Errorf("RPC: %#v", x)
 	}
 
 	contacts := make(map[int32]User)
@@ -774,15 +818,22 @@ func (m *MTProto) debugRoutine() {
 	for {
 		m.mutex.Lock()
 		count := 0
+		needReconnect := false
 		for id := range m.msgsByID {
 			delta := time.Now().Unix() - (id >> 32)
 			if delta > 5 {
 				log.Warn("msgsByID: #%d: is here for %ds", id, delta)
+				if delta-int64(m.idleLimit.Seconds()) > 0 {
+					needReconnect = true
+				}
 			}
 			count++
 		}
 		m.mutex.Unlock()
 		log.Debug("msgsByID: %d total", count)
+		if needReconnect {
+			m.reconnectLogged()
+		}
 		time.Sleep(5 * time.Second)
 	}
 }

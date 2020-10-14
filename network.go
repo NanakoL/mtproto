@@ -6,12 +6,10 @@ import (
 	"encoding/binary"
 	"fmt"
 	"time"
-
-	"github.com/ansel1/merry"
 )
 
 func (m *MTProto) justSend(msg TLReq) error {
-	return merry.Wrap(m.send(newPacket(msg, nil)))
+	return WrapError(m.send(newPacket(msg, nil)))
 }
 
 func (m *MTProto) send(packet *packetToSend) error {
@@ -55,7 +53,7 @@ func (m *MTProto) send(packet *packetToSend) error {
 		copy(y, z.buf)
 		encryptedData, err := doAES256IGEencrypt(y, aesKey, aesIV)
 		if err != nil {
-			return merry.Wrap(err)
+			return WrapError(err)
 		}
 
 		x.Bytes(m.session.AuthKeyHash)
@@ -85,7 +83,7 @@ func (m *MTProto) send(packet *packetToSend) error {
 	}
 	_ = m.conn.SetWriteDeadline(time.Now().Add(60 * time.Second))
 	if _, err := m.conn.Write(x.buf); err != nil {
-		return merry.Wrap(err)
+		return WrapError(err)
 	}
 
 	return nil
@@ -99,12 +97,12 @@ func (m *MTProto) read() (TL, error) {
 
 	err = m.conn.SetReadDeadline(time.Now().Add(300 * time.Second))
 	if err != nil {
-		return nil, merry.Wrap(err)
+		return nil, WrapError(err)
 	}
 	b := make([]byte, 1)
 	n, err = m.conn.Read(b)
 	if err != nil {
-		return nil, merry.Wrap(err)
+		return nil, WrapError(err)
 	}
 
 	if b[0] < 127 {
@@ -113,7 +111,7 @@ func (m *MTProto) read() (TL, error) {
 		b := make([]byte, 3)
 		n, err = m.conn.Read(b)
 		if err != nil {
-			return nil, merry.Wrap(err)
+			return nil, WrapError(err)
 		}
 		size = (int(b[0]) | int(b[1])<<8 | int(b[2])<<16) << 2
 	}
@@ -123,13 +121,13 @@ func (m *MTProto) read() (TL, error) {
 	for left > 0 {
 		n, err = m.conn.Read(buf[size-left:])
 		if err != nil {
-			return nil, merry.Wrap(err)
+			return nil, WrapError(err)
 		}
 		left -= n
 	}
 
 	if size == 4 {
-		return nil, merry.Errorf("Server response error: %d", int32(binary.LittleEndian.Uint32(buf)))
+		return nil, fmt.Errorf("server response error: %d", int32(binary.LittleEndian.Uint32(buf)))
 	}
 
 	dbuf := NewDecodeBuf(buf)
@@ -139,13 +137,13 @@ func (m *MTProto) read() (TL, error) {
 		m.msgId = dbuf.Long()
 		messageLen := dbuf.Int()
 		if int(messageLen) != dbuf.size-20 {
-			return nil, merry.Errorf("Message len: %d (need %d)", messageLen, dbuf.size-20)
+			return nil, fmt.Errorf("message len: %d (need %d)", messageLen, dbuf.size-20)
 		}
 		m.seqNo = 0
 
 		data = dbuf.Object()
 		if dbuf.err != nil {
-			return nil, merry.Wrap(dbuf.err)
+			return nil, WrapError(dbuf.err)
 		}
 	} else {
 		msgKey := dbuf.Bytes(16)
@@ -153,7 +151,7 @@ func (m *MTProto) read() (TL, error) {
 		aesKey, aesIV := generateAES(msgKey, m.session.AuthKey, true)
 		x, err := doAES256IGEdecrypt(encryptedData, aesKey, aesIV)
 		if err != nil {
-			return nil, merry.Wrap(err)
+			return nil, WrapError(err)
 		}
 		dbuf = NewDecodeBuf(x)
 		_ = dbuf.Long() // salt
@@ -162,7 +160,7 @@ func (m *MTProto) read() (TL, error) {
 		m.seqNo = dbuf.Int()
 		messageLen := dbuf.Int()
 		if int(messageLen) > dbuf.size-32 {
-			return nil, merry.Errorf("Message len: %d (need <= %d)", messageLen, dbuf.size-32)
+			return nil, fmt.Errorf("message len: %d (need <= %d)", messageLen, dbuf.size-32)
 		}
 		// DEBUG vvv
 		if dbuf.err != nil {
@@ -173,21 +171,21 @@ func (m *MTProto) read() (TL, error) {
 		}
 		hash := sha1.Sum(dbuf.buf[0 : 32+messageLen])
 		if !bytes.Equal(hash[4:20], msgKey) {
-			return nil, merry.New("Wrong msg_key")
+			return nil, fmt.Errorf("wrong msg_key")
 		}
 		// if !bytes.Equal(sha1.Sum(dbuf.buf[0 : 32+messageLen])[4:20], msgKey) {
-		// 	return nil, merry.New("Wrong msg_key")
+		// 	return nil, fmt.Errorf("Wrong msg_key")
 		// }
 		// DEBUG ^^^
 
 		data = m.decodeMessage(dbuf, nil)
 		if dbuf.err != nil {
-			return nil, merry.Wrap(dbuf.err)
+			return nil, WrapError(dbuf.err)
 		}
 	}
 	mod := m.msgId & 3
 	if mod != 1 && mod != 3 {
-		return nil, merry.Errorf("Wrong bits of message_id: %d", mod)
+		return nil, fmt.Errorf("wrong bits of message_id: %d", mod)
 	}
 
 	log.Message(true, data, 0)
@@ -203,20 +201,20 @@ func (m *MTProto) makeAuthKey() error {
 	nonceFirst := GenerateNonce(16)
 	err = m.justSend(ReqPqMulti{nonceFirst})
 	if err != nil {
-		return merry.Wrap(err)
+		return WrapError(err)
 	}
 
 	// (parse) resPQ
 	data, err = m.read()
 	if err != nil {
-		return merry.Wrap(err)
+		return WrapError(err)
 	}
 	res, ok := data.(ResPQ)
 	if !ok {
-		return merry.Errorf("Handshake: Need resPQ, got %#v", data)
+		return fmt.Errorf("handshake: Need resPQ, got %#v", data)
 	}
 	if !bytes.Equal(nonceFirst, res.Nonce) {
-		return merry.New("Handshake: Wrong nonce")
+		return fmt.Errorf("handshake: Wrong nonce")
 	}
 	found := false
 	for _, b := range res.ServerPublicKeyFingerprints {
@@ -226,7 +224,7 @@ func (m *MTProto) makeAuthKey() error {
 		}
 	}
 	if !found {
-		return merry.New("Handshake: No fingerprint")
+		return fmt.Errorf("handshake: No fingerprint")
 	}
 
 	// (encoding) p_q_inner_data
@@ -243,23 +241,23 @@ func (m *MTProto) makeAuthKey() error {
 	// (send) req_DH_params
 	err = m.justSend(ReqDHParams{nonceFirst, nonceServer, big2str(p), big2str(q), tgPublicKeyFP, string(encryptedData1)})
 	if err != nil {
-		return merry.Wrap(err)
+		return WrapError(err)
 	}
 
 	// (parse) server_DH_params_{ok, fail}
 	data, err = m.read()
 	if err != nil {
-		return merry.Wrap(err)
+		return WrapError(err)
 	}
 	dh, ok := data.(ServerDHParamsOk)
 	if !ok {
-		return merry.Errorf("Handshake: Need server_DH_params_ok, got %#v", data)
+		return fmt.Errorf("handshake: Need server_DH_params_ok, got %#v", data)
 	}
 	if !bytes.Equal(nonceFirst, dh.Nonce) {
-		return merry.New("Handshake: Wrong nonce")
+		return fmt.Errorf("handshake: Wrong nonce")
 	}
 	if !bytes.Equal(nonceServer, dh.ServerNonce) {
-		return merry.New("Handshake: Wrong server_nonce")
+		return fmt.Errorf("handshake: Wrong server_nonce")
 	}
 	t1 := make([]byte, 48)
 	copy(t1[0:], nonceSecond)
@@ -289,22 +287,22 @@ func (m *MTProto) makeAuthKey() error {
 	// (parse-thru) server_DH_inner_data
 	decodedData, err := doAES256IGEdecrypt([]byte(dh.EncryptedAnswer), tmpAESKey, tmpAESIV)
 	if err != nil {
-		return merry.Wrap(err)
+		return WrapError(err)
 	}
 	innerbuf := NewDecodeBuf(decodedData[20:])
 	data = innerbuf.Object()
 	if innerbuf.err != nil {
-		return merry.Wrap(innerbuf.err)
+		return WrapError(innerbuf.err)
 	}
 	dhi, ok := data.(ServerDHInnerData)
 	if !ok {
-		return merry.New("Handshake: Need server_DH_inner_data")
+		return fmt.Errorf("handshake: Need server_DH_inner_data")
 	}
 	if !bytes.Equal(nonceFirst, dhi.Nonce) {
-		return merry.New("Handshake: Wrong nonce")
+		return fmt.Errorf("handshake: Wrong nonce")
 	}
 	if !bytes.Equal(nonceServer, dhi.ServerNonce) {
-		return merry.New("Handshake: Wrong server_nonce")
+		return fmt.Errorf("handshake: Wrong server_nonce")
 	}
 
 	_, gB, gAb := makeGAB(dhi.G, str2big(dhi.GA), str2big(dhi.DhPrime))
@@ -333,26 +331,26 @@ func (m *MTProto) makeAuthKey() error {
 	// (send) set_client_DH_params
 	err = m.justSend(SetClientDHParams{nonceFirst, nonceServer, string(encryptedData2)})
 	if err != nil {
-		return merry.Wrap(err)
+		return WrapError(err)
 	}
 
 	// (parse) dh_gen_{ok, retry, fail}
 	data, err = m.read()
 	if err != nil {
-		return merry.Wrap(err)
+		return WrapError(err)
 	}
 	dhg, ok := data.(DhGenOk)
 	if !ok {
-		return merry.Errorf("Handshake: Need dh_gen_ok, got %#v", data)
+		return fmt.Errorf("handshake: Need dh_gen_ok, got %#v", data)
 	}
 	if !bytes.Equal(nonceFirst, dhg.Nonce) {
-		return merry.New("Handshake: Wrong nonce")
+		return fmt.Errorf("handshake: Wrong nonce")
 	}
 	if !bytes.Equal(nonceServer, dhg.ServerNonce) {
-		return merry.New("Handshake: Wrong server_nonce")
+		return fmt.Errorf("handshake: Wrong server_nonce")
 	}
 	if !bytes.Equal(nonceHash1, dhg.NewNonceHash1) {
-		return merry.New("Handshake: Wrong new_nonce_hash1")
+		return fmt.Errorf("handshake: Wrong new_nonce_hash1")
 	}
 	return nil
 }

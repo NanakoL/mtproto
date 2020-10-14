@@ -249,12 +249,7 @@ func main() {
 	combinators := parseTLSchema(data)
 
 	// constants
-	fmt.Printf(`package mtproto
-import (
-	"github.com/ansel1/merry"
-)
-
-`)
+	fmt.Printf("package mtproto\nimport \"fmt\"\n")
 	fmt.Printf("const (\n")
 	fmt.Printf("Layer = %d\n", layer)
 	for _, c := range combinators {
@@ -451,7 +446,7 @@ func (m *DecodeBuf) ObjectGenerated(constructor uint32) (r TL) {
 
 	fmt.Printf(`
 	default:
-		m.err = merry.Errorf("Unknown constructor: \u002508x", constructor)
+		m.err = fmt.Errorf("unknown constructor: \u002508x", constructor)
 		return nil
 
 	}

@@ -6,11 +6,11 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
+	"fmt"
 	"math/big"
 	"math/rand"
 	"time"
 
-	"github.com/ansel1/merry"
 	"golang.org/x/crypto/pbkdf2"
 )
 
@@ -205,10 +205,10 @@ func doAES256IGEencrypt(data, key, iv []byte) ([]byte, error) {
 		return nil, err
 	}
 	if len(data) < aes.BlockSize {
-		return nil, merry.Errorf("AES256IGE: data too small to encrypt: %d < %d", len(data), aes.BlockSize)
+		return nil, fmt.Errorf("AES256IGE: data too small to encrypt: %d < %d", len(data), aes.BlockSize)
 	}
 	if len(data)%aes.BlockSize != 0 {
-		return nil, merry.Errorf("AES256IGE: data not divisible by block size: %d %% %d != 0", len(data), aes.BlockSize)
+		return nil, fmt.Errorf("AES256IGE: data not divisible by block size: %d %% %d != 0", len(data), aes.BlockSize)
 	}
 
 	t := make([]byte, aes.BlockSize)
@@ -237,10 +237,10 @@ func doAES256IGEdecrypt(data, key, iv []byte) ([]byte, error) {
 		return nil, err
 	}
 	if len(data) < aes.BlockSize {
-		return nil, merry.Errorf("AES256IGE: data too small to decrypt: %d < %d", len(data), aes.BlockSize)
+		return nil, fmt.Errorf("AES256IGE: data too small to decrypt: %d < %d", len(data), aes.BlockSize)
 	}
 	if len(data)%aes.BlockSize != 0 {
-		return nil, merry.Errorf("AES256IGE: data not divisible by block size: %d %% %d != 0", len(data), aes.BlockSize)
+		return nil, fmt.Errorf("AES256IGE: data not divisible by block size: %d %% %d != 0", len(data), aes.BlockSize)
 	}
 
 	t := make([]byte, aes.BlockSize)
@@ -282,7 +282,7 @@ func calcInputCheckPasswordSRP(
 	defer logDebug(" --- SRP calculation end --- ")
 
 	if len(password) == 0 {
-		return nil, merry.New("password is empty")
+		return nil, fmt.Errorf("password is empty")
 	}
 	// TODO: check g and p
 	// https://github.com/tdlib/td/blob/d9a18a064fa99130dc9214fb6131ba59e5660892/td/telegram/PasswordManager.cpp#L79
@@ -296,7 +296,7 @@ func calcInputCheckPasswordSRP(
 	srpID := accPassword.SrpID
 
 	if len(BBuf) != 256 {
-		return nil, merry.Errorf("wrong SrpB size, expected 256 bytes, got %d", len(BBuf))
+		return nil, fmt.Errorf("wrong SrpB size, expected 256 bytes, got %d", len(BBuf))
 	}
 
 	gNum := new(big.Int).SetInt64(int64(gVal))
@@ -305,7 +305,7 @@ func calcInputCheckPasswordSRP(
 	BNum := new(big.Int).SetBytes(BBuf)
 
 	if BNum.Cmp(pNum) != -1 {
-		return nil, merry.Errorf("expected SrpB < P, got: SrpB = %s, P = %s", BNum, pNum)
+		return nil, fmt.Errorf("expected SrpB < P, got: SrpB = %s, P = %s", BNum, pNum)
 	}
 
 	// calc_password_hash
@@ -319,7 +319,7 @@ func calcInputCheckPasswordSRP(
 	aBuf := make([]byte, 2048/8)
 	_, err := randFunc(aBuf)
 	if err != nil {
-		return nil, merry.Wrap(err)
+		return nil, err
 	}
 	aNum := new(big.Int).SetBytes(aBuf)
 	logDebug("a: %s %#v", aNum, aBuf)

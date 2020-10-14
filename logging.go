@@ -2,7 +2,6 @@ package mtproto
 
 import (
 	"fmt"
-	"github.com/ansel1/merry"
 	"github.com/sirupsen/logrus"
 	"reflect"
 	"strings"
@@ -34,24 +33,26 @@ func StringifyMessage(isIncoming bool, msg TL, id int64) string {
 	return text
 }
 
-type Logger struct{}
-
-func (l Logger) Error(err error, msg string) {
-	logrus.Errorf(msg + ":\n" + merry.Details(err))
+type Logger struct {
+	*logrus.Logger
 }
 
-func (l Logger) Warn(msg string, args ...interface{}) {
-	logrus.Warnf(msg, args...)
+func (l *Logger) Error(err error, msg string) {
+	l.Errorf(msg + ":\n" + err.Error())
 }
 
-func (l Logger) Info(msg string, args ...interface{}) {
-	logrus.Infof(msg, args...)
+func (l *Logger) Warn(msg string, args ...interface{}) {
+	l.Warnf(msg, args...)
 }
 
-func (l Logger) Debug(msg string, args ...interface{}) {
-	logrus.Debugf("\033[90m"+msg+"\033[0m", args...)
+func (l *Logger) Info(msg string, args ...interface{}) {
+	l.Infof(msg, args...)
 }
 
-func (l Logger) Message(isIncoming bool, message TL, id int64) {
-	logrus.Debugf("\033[90m" + StringifyMessage(isIncoming, message, id) + "\033[0m")
+func (l *Logger) Debug(msg string, args ...interface{}) {
+	l.Debugf("\033[90m"+msg+"\033[0m", args...)
+}
+
+func (l *Logger) Message(isIncoming bool, message TL, id int64) {
+	l.Debugf("\033[90m" + StringifyMessage(isIncoming, message, id) + "\033[0m")
 }

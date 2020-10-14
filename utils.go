@@ -7,9 +7,16 @@ import (
 	"strings"
 	"time"
 	"unsafe"
-
-	"github.com/ansel1/merry"
 )
+
+func WrapError(e error) error {
+	switch e1 := e.(type) {
+	case nil:
+		return nil
+	default:
+		return e1
+	}
+}
 
 // https://core.telegram.org/api/errors
 func IsError(obj TL, message string) bool {
@@ -52,7 +59,7 @@ func WrongRespError(obj TL) error {
 	if _, ok := obj.(RpcError); ok {
 		_type = "error"
 	}
-	return merry.Errorf(UnexpectedTL(_type, obj)).WithStackSkipping(1)
+	return fmt.Errorf(UnexpectedTL(_type, obj))
 }
 
 func SliceConvert(slice interface{}, newSliceType reflect.Type) interface{} {
@@ -82,7 +89,7 @@ func SliceToTLStable(slice interface{}) []TL {
 		panic(fmt.Sprintf("Slice called with non-slice value of type %T", slice))
 	}
 	ret := make([]TL, s.Len())
-	for i:=0; i<s.Len(); i++ {
+	for i := 0; i < s.Len(); i++ {
 		ret[i] = s.Index(i).Interface().(TL)
 	}
 	return ret

@@ -2,9 +2,8 @@ package mtproto
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
-
-	"github.com/ansel1/merry"
 )
 
 type Session struct {
@@ -19,14 +18,14 @@ type Session struct {
 func (s *Session) Save(path string) (err error) {
 	f, err := os.Create(path)
 	if err != nil {
-		return merry.Wrap(err)
+		return WrapError(err)
 	}
 	defer f.Close()
 
 	encoder := json.NewEncoder(f)
 	encoder.SetIndent("", "\t")
 	if err := encoder.Encode(s); err != nil {
-		return merry.Wrap(err)
+		return WrapError(err)
 	}
 	return nil
 }
@@ -34,16 +33,16 @@ func (s *Session) Save(path string) (err error) {
 func LoadSession(path string) (*Session, error) {
 	f, err := os.Open(path)
 	if os.IsNotExist(err) {
-		return nil, merry.New("no session data")
+		return nil, fmt.Errorf("no session data")
 	}
 	if err != nil {
-		return nil, merry.Wrap(err)
+		return nil, err
 	}
 	defer f.Close()
 
 	var sess Session
 	if err := json.NewDecoder(f).Decode(&sess); err != nil {
-		return nil, merry.Wrap(err)
+		return nil, err
 	}
 	return &sess, nil
 }

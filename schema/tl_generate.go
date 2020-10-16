@@ -222,7 +222,7 @@ func parseTLSchema(data []byte) []*Combinator {
 			fields = append(fields, makeField(name, typeName))
 		}
 
-		combinators = append(combinators, &Combinator{ normalizeAttr(id), name, fields, typeName, isFunction})
+		combinators = append(combinators, &Combinator{normalizeAttr(id), name, fields, typeName, isFunction})
 	}
 	print("Parsed: ", total)
 	return combinators
@@ -289,14 +289,14 @@ func main() {
 			case "Vector<double>":
 				line += fmt.Sprintf("[]float64")
 			case "!X":
-				line = fmt.Sprintf("%s TL",  normalizeAttr(t.name))
+				line = fmt.Sprintf("%s TL", normalizeAttr(t.name))
 			default:
 				var inner string
 				n, _ := fmt.Sscanf(strings.Title(t.typeName), "Vector<%s", &inner)
 				if n == 1 {
-					line = fmt.Sprintf("%s []TL // %s",  normalizeAttr(t.name), inner[:len(inner)-1])
+					line = fmt.Sprintf("%s []TL // %s", normalizeAttr(t.name), inner[:len(inner)-1])
 				} else {
-					line = fmt.Sprintf("%s TL // %s",  normalizeAttr(t.name), t.typeName)
+					line = fmt.Sprintf("%s TL // %s", normalizeAttr(t.name), t.typeName)
 				}
 			}
 			if t.isFlag() {
@@ -309,7 +309,7 @@ func main() {
 
 	// encode funcs
 	for _, c := range combinators {
-		fmt.Printf("func (e %s) encode() []byte {\n",  c.id)
+		fmt.Printf("func (e %s) encode() []byte {\n", c.id)
 		fmt.Printf("x := NewEncodeBuf(512)\n")
 		fmt.Printf("x.UInt(crc%s)\n", c.id)
 		for _, t := range c.fields {

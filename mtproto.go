@@ -33,15 +33,15 @@ type AppConfig struct {
 }
 
 type MTProto struct {
-	lastReConnect time.Time
+	lastReConnect        time.Time
 	reConnectMinInterval time.Duration
 	reConnectMaxInterval time.Duration
-	idleLimit  time.Duration
-	useIPv6    bool
-	session    *Session
-	appCfg     *AppConfig
-	connDialer proxy.Dialer
-	conn       net.Conn
+	idleLimit            time.Duration
+	useIPv6              bool
+	session              *Session
+	appCfg               *AppConfig
+	connDialer           proxy.Dialer
+	conn                 net.Conn
 
 	// Two queues here.
 	// First (external) has limited size and contains external requests.
@@ -110,11 +110,11 @@ func NewMTProto(cfg *AppConfig) *MTProto {
 	m := &MTProto{
 		reConnectMinInterval: time.Second,
 		reConnectMaxInterval: time.Minute,
-		idleLimit:  time.Hour,
-		useIPv6:    false,
-		session:    nil,
-		connDialer: &net.Dialer{},
-		appCfg:     cfg,
+		idleLimit:            time.Hour,
+		useIPv6:              false,
+		session:              nil,
+		connDialer:           &net.Dialer{},
+		appCfg:               cfg,
 
 		extSendQueue: make(chan *packetToSend, 64),
 		sendQueue:    make(chan *packetToSend, 1024),
@@ -336,7 +336,7 @@ func (m *MTProto) reconnectLogged() {
 		log.Info("retrying in %d seconds", coolDown.Seconds())
 		time.Sleep(coolDown)
 		if coolDown.Milliseconds()*2 < m.reConnectMaxInterval.Milliseconds() {
-			coolDown = coolDown*2
+			coolDown = coolDown * 2
 		}
 		// and trying to reconnect again
 	}
@@ -346,9 +346,7 @@ func (m *MTProto) Reconnect() error {
 	return m.reconnect(0)
 }
 
-func (m *MTProto) reconnect(newDcID int32) error {
-	log.Info("reconnecting: DC %d -> %d", m.session.DcID, newDcID)
-
+func (m *MTProto) Disconnect() error {
 	// stopping routines
 	log.Debug("stopping routines...")
 	for i := 0; i < RoutinesCount; i++ {
@@ -374,6 +372,16 @@ func (m *MTProto) reconnect(newDcID int32) error {
 		default:
 			empty = true
 		}
+	}
+	return nil
+}
+
+func (m *MTProto) reconnect(newDcID int32) error {
+	log.Info("reconnecting: DC %d -> %d", m.session.DcID, newDcID)
+
+	err := m.Disconnect()
+	if err != nil {
+		return err
 	}
 
 	// saving IDs of messages from msgsByID[],

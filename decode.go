@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"math"
 	"math/big"
-
 )
 
 func notEnoughBytesErr(kind string, pos, inc, size int) error {
